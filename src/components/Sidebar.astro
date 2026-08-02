@@ -1,0 +1,42 @@
+---
+import { getCollection } from 'astro:content';
+import { SECTION_ORDER } from '../sections';
+
+const { currentSlug } = Astro.props;
+
+const pages = await getCollection('procedures');
+
+// Group pages by their section.
+const bySection = new Map();
+for (const p of pages) {
+  const s = p.data.section;
+  if (!bySection.has(s)) bySection.set(s, []);
+  bySection.get(s).push(p);
+}
+// Sort each section's pages by `order` then title.
+for (const list of bySection.values()) {
+  list.sort((a, b) => (a.data.order - b.data.order) || a.data.title.localeCompare(b.data.title));
+}
+// Show sections in the defined order; anything not listed goes last.
+const orderedSections = [
+  ...SECTION_ORDER.filter((s) => bySection.has(s)),
+  ...[...bySection.keys()].filter((s) => !SECTION_ORDER.includes(s)),
+];
+---
+<nav class="sidebar" id="sidebar" aria-label="Handbook sections">
+  {orderedSections.map((section) => (
+    <div>
+      <h2>{section}</h2>
+      <ul>
+        {bySection.get(section).map((p) => (
+          <li>
+            <a
+              href={`/${p.slug}/`}
+              aria-current={currentSlug === p.slug ? 'page' : undefined}
+            >{p.data.title}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ))}
+</nav>

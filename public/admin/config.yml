@@ -1,0 +1,51 @@
+# ============================================================
+#  Loaded Dice Handbook — Editor settings
+#  Change ONLY the two lines marked <-- CHANGE if you rename
+#  the GitHub repo. Everything else can stay as-is.
+# ============================================================
+
+backend:
+  name: github
+  repo: caughtsmart/StaffPortal     # <-- CHANGE to your GitHub username/repo
+  branch: main                      # <-- CHANGE if your main branch is named differently
+
+# Where uploaded images are stored.
+media_folder: "public/uploads"
+public_folder: "/uploads"
+
+# Nicer editor experience.
+publish_mode: simple
+site_url: https://staff.loadeddice.uk
+
+collections:
+  - name: procedures
+    label: "Procedures"
+    label_singular: "Procedure"
+    folder: "src/content/procedures"
+    create: true
+    slug: "{{fields.title | slugify}}"
+    extension: md
+    format: frontmatter
+    summary: "{{title}}  —  {{section}}"
+    sortable_fields: [section, title, updated]
+    fields:
+      - { name: title, label: "Title", widget: string }
+      - name: section
+        label: "Section (menu group)"
+        widget: select
+        options:
+          - "Start Here"
+          - "Opening & Closing"
+          - "Till & Payments"
+          - "Shopify & Online Orders"
+          - "Stock & Suppliers"
+          - "Events & In-Store Gaming"
+          - "Customer Service"
+          - "HR & People"
+          - "Health & Safety"
+          - "Marketing"
+      - { name: order, label: "Order in section (1 = top)", widget: number, default: 1, value_type: int }
+      - { name: summary, label: "One-line summary", widget: string, required: false }
+      - { name: updated, label: "Last updated", widget: datetime, date_format: "YYYY-MM-DD", time_format: false, format: "YYYY-MM-DD" }
+      - { name: updatedBy, label: "Updated by", widget: string }
+      - { name: body, label: "Page content", widget: markdown }

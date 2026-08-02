@@ -1,0 +1,24 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const pages = await getCollection('procedures');
+  return pages.map((p) => ({ params: { slug: p.slug }, props: { page: p } }));
+}
+
+const { page } = Astro.props;
+const { Content } = await page.render();
+const d = page.data;
+const dateStr = d.updated.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+---
+<Base title={d.title} currentSlug={page.slug}>
+  <span class="badge">{d.section}</span>
+  <h1>{d.title}</h1>
+  <div class="meta">
+    <span>Last updated {dateStr}</span>
+    <span>·</span>
+    <span>by {d.updatedBy}</span>
+  </div>
+  <Content />
+</Base>

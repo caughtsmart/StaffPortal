@@ -1,0 +1,52 @@
+---
+import Sidebar from '../components/Sidebar.astro';
+import '../styles/global.css';
+
+const { title, currentSlug } = Astro.props;
+const pageTitle = title ? `${title} · Loaded Dice Staff Handbook` : 'Loaded Dice Staff Handbook';
+---
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{pageTitle}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Search UI (generated at build time by Pagefind) -->
+    <link href="/pagefind/pagefind-ui.css" rel="stylesheet" />
+    <script src="/pagefind/pagefind-ui.js" is:inline></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <button class="menu-toggle" aria-label="Toggle menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+      <a class="brand" href="/">
+        <img src="/logo.svg" alt="Loaded Dice" />
+        <span>Staff Handbook<small>Loaded Dice</small></span>
+      </a>
+      <div class="header-spacer"></div>
+      <div class="header-search"><div id="search"></div></div>
+    </header>
+
+    <div class="layout">
+      <Sidebar currentSlug={currentSlug} />
+      <main class="content-wrap">
+        <article class="content">
+          <slot />
+        </article>
+      </main>
+    </div>
+
+    <footer class="site-footer">
+      Loaded Dice — internal staff handbook. Confidential. Do not share outside the team.
+    </footer>
+
+    <script is:inline>
+      window.addEventListener('DOMContentLoaded', () => {
+        if (window.PagefindUI) {
+          new window.PagefindUI({ element: '#search', showSubResults: true, showImages: false, resetStyles: false });
+        }
+      });
+    </script>
+  </body>
+</html>

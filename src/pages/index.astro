@@ -1,0 +1,40 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+import { SECTION_ORDER } from '../sections';
+
+const pages = await getCollection('procedures');
+const bySection = new Map();
+for (const p of pages) {
+  if (!bySection.has(p.data.section)) bySection.set(p.data.section, []);
+  bySection.get(p.data.section).push(p);
+}
+for (const list of bySection.values()) {
+  list.sort((a, b) => (a.data.order - b.data.order) || a.data.title.localeCompare(b.data.title));
+}
+const orderedSections = SECTION_ORDER.filter((s) => bySection.has(s));
+
+const totalPages = pages.length;
+---
+<Base title="Home">
+  <div class="hero">
+    <h1>Loaded Dice Staff Handbook</h1>
+    <p>Everything you need to run the shop — procedures, policies and how-tos, all in one place. Use the search box (top right) or the menu on the left to find what you need.</p>
+  </div>
+
+  <p style="color:var(--ld-muted); margin-top:-8px;">{totalPages} procedures across {orderedSections.length} sections.</p>
+
+  {orderedSections.map((section) => (
+    <section style="margin-bottom:26px;">
+      <h2>{section}</h2>
+      <div class="card-grid">
+        {bySection.get(section).map((p) => (
+          <a class="card" href={`/${p.slug}/`}>
+            <strong>{p.data.title}</strong>
+            <span>{p.data.summary ?? 'Open procedure →'}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  ))}
+</Base>
