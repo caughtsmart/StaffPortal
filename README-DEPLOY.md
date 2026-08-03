@@ -43,11 +43,15 @@ You already use **GitHub Desktop** for UAP Times, so this is familiar ground.
 
 ---
 
-## Step 3 — Point your address at it (`staff.loadeddice.uk`)
+## Step 3 — Point your address at it (`ldhq.uk`)
+
+> **Note:** `loadeddice.uk` DNS lives at Squarespace, not Cloudflare, so instead of
+> `staff.loadeddice.uk` the handbook uses its own dedicated domain **`ldhq.uk`**,
+> registered directly with Cloudflare.
 
 1. Still in the Pages project → **Custom domains** → **Set up a domain**.
-2. Type **`staff.loadeddice.uk`** and follow the prompt. Because `loadeddice.uk` is already on Cloudflare, it wires up automatically.
-3. Give it a couple of minutes, then visit **https://staff.loadeddice.uk** — that's your handbook.
+2. Type **`ldhq.uk`** and follow the prompt. Because the domain is registered with Cloudflare, it wires up automatically.
+3. Give it a couple of minutes, then visit **https://ldhq.uk** — that's your handbook.
 
 ---
 
@@ -57,14 +61,14 @@ This is **Cloudflare Access** — free for up to 50 users. Staff type their work
 
 1. In Cloudflare dash → **Zero Trust** (left menu). If it asks you to pick a plan, choose the **Free** plan.
 2. Go to **Access ▸ Applications** → **Add an application** → **Self-hosted**.
-3. **Application name:** `Staff Handbook`. **Domain:** `staff.loadeddice.uk`.
+3. **Application name:** `Staff Handbook`. **Domains:** add **both** `ldhq.uk` **and** the `*.pages.dev` address, so the temporary link is locked down too.
 4. Add a **policy**:
    - **Policy name:** `Loaded Dice staff`
    - **Action:** `Allow`
    - **Include** → **Emails** → add each staff email (graham@, leigh@, chris@, and the rest of the team).
    - *(Tip: to add whole domain later, use "Emails ending in" `@loadeddice.uk`.)*
 5. For the login method, make sure **One-time PIN** is enabled (Settings ▸ Authentication) — that's the "email then code" login you asked for.
-6. Save. Now visiting `staff.loadeddice.uk` asks for an email + code first. Test it in a private browser window.
+6. Save. Now visiting `ldhq.uk` asks for an email + code first. Test it in a private browser window.
 
 **Adding a starter:** add their email to the policy. **Removing a leaver:** delete their email. Instant.
 
@@ -72,7 +76,7 @@ This is **Cloudflare Access** — free for up to 50 users. Staff type their work
 
 ## Step 5 — Connect the editor (so Leigh & Chris can edit without code)
 
-The editor lives at **`staff.loadeddice.uk/admin`**. It needs a one-time connection to GitHub so it can save changes. This is the only slightly techie step — **happy to do this bit with you.**
+The editor lives at **`ldhq.uk/admin`**. It needs a one-time connection to GitHub so it can save changes. This is the only slightly techie step — **happy to do this bit with you.**
 
 1. In `public/admin/config.yml`, check the **`repo:`** line matches your GitHub repo (e.g. `loadeddice/staff-handbook`). If you named it differently, change it, save, and push via GitHub Desktop.
 2. Set up GitHub sign-in for the editor. Easiest route: deploy the free **Sveltia CMS Authenticator** (a tiny Cloudflare Worker) and create a **GitHub OAuth App**. It's a 10-minute copy-paste job — I'll give you the exact clicks when you're ready, or do it for you.
@@ -84,8 +88,8 @@ The editor lives at **`staff.loadeddice.uk/admin`**. It needs a one-time connect
 
 ## Editing day-to-day (the whole point)
 
-- **Read:** anyone on the staff list just visits `staff.loadeddice.uk`.
-- **Edit:** you / Leigh / Chris go to `staff.loadeddice.uk/admin`.
+- **Read:** anyone on the staff list just visits `ldhq.uk`.
+- **Edit:** you / Leigh / Chris go to `ldhq.uk/admin`.
 - **Undo a mistake:** GitHub Desktop → History → right-click the change → **Revert**. Or ask me.
 
 ## Swapping the logo & colours
