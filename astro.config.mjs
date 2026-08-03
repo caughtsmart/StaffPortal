@@ -4,7 +4,7 @@ import { defineConfig } from 'astro/config';
 // Static site. Deploys to Cloudflare Pages.
 // Update `site` to the live URL once the domain is set up.
 export default defineConfig({
-  site: 'https://staff.loadeddice.uk',
+  site: 'https://ldhq.uk',
   build: {
     format: 'directory',
   },

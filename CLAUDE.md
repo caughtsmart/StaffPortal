@@ -8,7 +8,7 @@ A **private, login-gated internal staff handbook** for Loaded Dice (a tabletop g
 Staff read procedures; a few managers edit them. Built as a static site, same pattern as
 the owner's UAP Times site (Astro + Cloudflare + GitHub Desktop).
 
-- **Live domain (target):** `staff.loadeddice.uk`
+- **Live domain:** `ldhq.uk` (dedicated domain on Cloudflare; `staff.loadeddice.uk` not used — loadeddice.uk DNS lives at Squarespace)
 - **Hosting:** Cloudflare Pages (free)
 - **Login wall:** Cloudflare Access, email → one-time PIN (free ≤50 users)
 - **Editors (edit rights):** graham@loadeddice.uk, leigh@loadeddice.uk, chris@loadeddice.uk
@@ -80,7 +80,7 @@ The page **body** is the markdown after the frontmatter. Slug/URL = the filename
 ## Deployment (already documented in README-DEPLOY.md)
 
 Cloudflare Pages build settings: build command `npm run build`, output dir `dist`,
-env `NODE_VERSION=20`. Custom domain `staff.loadeddice.uk`. Then Cloudflare Access
+env `NODE_VERSION=20`. Custom domain `ldhq.uk`. Then Cloudflare Access
 policy allowing the staff emails, One-time PIN enabled.
 
 ## Outstanding / next tasks

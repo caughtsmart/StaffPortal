@@ -15,7 +15,7 @@ public_folder: "/uploads"
 
 # Nicer editor experience.
 publish_mode: simple
-site_url: https://staff.loadeddice.uk
+site_url: https://ldhq.uk
 
 collections:
   - name: procedures
