@@ -1,10 +1,10 @@
 /* ============================================================
-   Loaded Dice — Staff Handbook styles
+   Staff Handbook styles
    Brand colours are set as variables so they're easy to change.
    ============================================================ */
 :root {
   --ld-ink: #1a1a1e;          /* near-black text / header */
-  --ld-red: #b8232f;          /* Loaded Dice red accent */
+  --ld-red: #b8232f;          /* primary red accent */
   --ld-red-dark: #8f1a24;
   --ld-gold: #d9a441;         /* subtle gold accent */
   --ld-bg: #f6f6f4;           /* page background */

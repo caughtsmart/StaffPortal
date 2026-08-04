@@ -3,7 +3,7 @@ import Sidebar from '../components/Sidebar.astro';
 import '../styles/global.css';
 
 const { title, currentSlug } = Astro.props;
-const pageTitle = title ? `${title} · Loaded Dice Staff Handbook` : 'Loaded Dice Staff Handbook';
+const pageTitle = title ? `${title} · Staff Handbook` : 'Staff Handbook';
 ---
 <!doctype html>
 <html lang="en-GB">
@@ -21,8 +21,8 @@ const pageTitle = title ? `${title} · Loaded Dice Staff Handbook` : 'Loaded Dic
     <header class="site-header">
       <button class="menu-toggle" aria-label="Toggle menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
       <a class="brand" href="/">
-        <img src="/logo.svg" alt="Loaded Dice" />
-        <span>Staff Handbook<small>Loaded Dice</small></span>
+        <img src="/logo.svg" alt="Staff Handbook" />
+        <span>Staff Handbook<small>Internal</small></span>
       </a>
       <div class="header-spacer"></div>
       <div class="header-search"><div id="search"></div></div>
@@ -38,7 +38,7 @@ const pageTitle = title ? `${title} · Loaded Dice Staff Handbook` : 'Loaded Dic
     </div>
 
     <footer class="site-footer">
-      Loaded Dice — internal staff handbook. Confidential. Do not share outside the team.
+      Internal staff handbook. Confidential. Do not share outside the team.
     </footer>
 
     <script is:inline>

@@ -24,9 +24,9 @@ Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu 
 
 | Item | Detail | Owner |
 |------|--------|-------|
-| Nulla vitae | Cras justo odio | Graham |
-| Vestibulum | Dapibus ac facilisis | Leigh |
-| Maecenas sed | Diam eget risus | Chris |
+| Nulla vitae | Cras justo odio | Manager |
+| Vestibulum | Dapibus ac facilisis | Supervisor |
+| Maecenas sed | Diam eget risus | Keyholder |
 
 ## Notes
 
