@@ -43,6 +43,8 @@ collections:
           - "Customer Service"
           - "HR & People"
           - "Health & Safety"
+          - "Data & IT"
+          - "Security & Conduct"
           - "Marketing"
       - { name: order, label: "Order in section (1 = top)", widget: number, default: 1, value_type: int }
       - { name: summary, label: "One-line summary", widget: string, required: false }
