@@ -3,7 +3,7 @@
 // To add your own, just add another line — keep the quote marks and comma.
 export const QUOTES: string[] = [
   'A tidy shelf sells twice.',
-  'Every natural 20 starts with picking up the dice.',
+  'Nobody ever rolled a natural 20 by standing still.',
   'Greet first, tidy second.',
   'The stock count you do today is the panic you skip on Friday.',
   'No question is daft. The one nobody asked usually is.',
