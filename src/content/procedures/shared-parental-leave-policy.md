@@ -15,7 +15,7 @@ Shared Parental Leave (SPL) is available to eligible parents with babies due on 
 
 This policy applies to all employees of Loaded Dice, whether they are the mother/adopter or the partner. Each parent must liaise with their own employer to make SPL arrangements.
 
-Employees should contact the HR Manager for guidance before submitting a request, as SPL provisions are complex.
+Employees should contact the HR Manager (Leigh O'Dell) for guidance before submitting a request, as SPL provisions are complex.
 
 ## 2. Aims of the policy
 

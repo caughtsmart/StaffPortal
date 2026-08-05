@@ -124,7 +124,7 @@ Return-to-work interviews aim to support employees in their transition back to w
 - **8.4.3** Their incapacity has been caused by participation in dangerous sports or activities.
 - **8.4.4** If the absence is determined to be due to misconduct.
 
-Employees will be notified in writing of their sick pay entitlement and any changes to their pay during a period of illness.
+**8.5** Employees will be notified in writing of their sick pay entitlement and any changes to their pay during a period of illness.
 
 ## 9. Other absences — jury service
 

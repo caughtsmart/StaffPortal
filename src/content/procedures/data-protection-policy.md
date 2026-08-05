@@ -54,7 +54,7 @@ Special category data (e.g. health, ethnicity) will only be processed under stri
 
 ## 5. Data accuracy
 
-Employees must ensure Loaded Dice holds accurate and up-to-date information. Personal details should be updated promptly via the HR contact. Loaded Dice will review employee data at least annually to maintain accuracy.
+Employees must ensure Loaded Dice holds accurate and up-to-date information. Personal details should be updated promptly via Leigh O'Dell, who handles HR. Loaded Dice will review employee data at least annually to maintain accuracy.
 
 ## 6. Data retention
 

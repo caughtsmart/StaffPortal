@@ -21,7 +21,7 @@ This is the health and safety policy statement of **Loaded Dice**.
 
 Mr Graham Scutt, Managing Director.
 
-- **Warehouse / Head Office:** Loaded Dice, Unit 4C, Windmill Park, Hayes Road, Sully, Vale of Glamorgan, CF64 5AD
+- **Warehouse / Head Office:** Loaded Dice, Unit C4, Windmill Park, Hayes Road, Sully, Vale of Glamorgan, CF64 5AD
 - **Retail Shop:** Loaded Dice, 28 Holton Road, Barry, Vale of Glamorgan, CF63 4HD
 
 Our health and safety policy is to:
