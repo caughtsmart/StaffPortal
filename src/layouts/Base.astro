@@ -1,5 +1,6 @@
 ---
 import Sidebar from '../components/Sidebar.astro';
+import Banner from '../components/Banner.astro';
 import '../styles/global.css';
 
 const { title, currentSlug } = Astro.props;
@@ -27,6 +28,8 @@ const pageTitle = title ? `${title} · Staff Handbook` : 'Staff Handbook';
       <div class="header-spacer"></div>
       <div class="header-search"><div id="search"></div></div>
     </header>
+
+    <Banner />
 
     <div class="layout">
       <Sidebar currentSlug={currentSlug} />

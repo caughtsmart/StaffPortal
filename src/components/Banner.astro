@@ -1,0 +1,81 @@
+---
+import { QUOTES } from '../quotes';
+
+// Where the weather is shown for. To use a different town, change the name
+// and look its latitude/longitude up (search "<town> latitude longitude").
+const PLACE = 'Barry';
+const LATITUDE = 51.4056;
+const LONGITUDE = -3.2695;
+
+// The quote for the day the site was built. The script below replaces it with
+// the reader's own date, so it still changes daily between builds.
+const buildDayQuote = QUOTES[Math.floor(Date.now() / 86400000) % QUOTES.length];
+---
+<div class="topbar" data-pagefind-ignore>
+  <p class="topbar-quote" id="quote-of-the-day">{buildDayQuote}</p>
+  <div class="topbar-weather" id="weather" hidden>
+    <span id="weather-icon" aria-hidden="true"></span>
+    <span id="weather-text"></span>
+  </div>
+</div>
+
+<script is:inline define:vars={{ quotes: QUOTES, place: PLACE, latitude: LATITUDE, longitude: LONGITUDE }}>
+  // ---- Quote of the day -------------------------------------------------
+  // Same quote for everyone on the same day; moves on at midnight.
+  const dayNumber = Math.floor(Date.now() / 86400000);
+  document.getElementById('quote-of-the-day').textContent = quotes[dayNumber % quotes.length];
+
+  // ---- Weather ----------------------------------------------------------
+  // Open-Meteo is free and needs no account. Codes are the standard WMO ones.
+  const CONDITIONS = {
+    0: ['☀️', 'Clear'],
+    1: ['🌤️', 'Mainly clear'],
+    2: ['⛅', 'Partly cloudy'],
+    3: ['☁️', 'Overcast'],
+    45: ['🌫️', 'Fog'],
+    48: ['🌫️', 'Freezing fog'],
+    51: ['🌦️', 'Light drizzle'],
+    53: ['🌦️', 'Drizzle'],
+    55: ['🌦️', 'Heavy drizzle'],
+    56: ['🌧️', 'Freezing drizzle'],
+    57: ['🌧️', 'Freezing drizzle'],
+    61: ['🌦️', 'Light rain'],
+    63: ['🌧️', 'Rain'],
+    65: ['🌧️', 'Heavy rain'],
+    66: ['🌧️', 'Freezing rain'],
+    67: ['🌧️', 'Freezing rain'],
+    71: ['🌨️', 'Light snow'],
+    73: ['🌨️', 'Snow'],
+    75: ['❄️', 'Heavy snow'],
+    77: ['🌨️', 'Snow grains'],
+    80: ['🌦️', 'Showers'],
+    81: ['🌦️', 'Showers'],
+    82: ['⛈️', 'Heavy showers'],
+    85: ['🌨️', 'Snow showers'],
+    86: ['🌨️', 'Snow showers'],
+    95: ['⛈️', 'Thunderstorm'],
+    96: ['⛈️', 'Thunderstorm with hail'],
+    99: ['⛈️', 'Thunderstorm with hail'],
+  };
+
+  const url =
+    'https://api.open-meteo.com/v1/forecast' +
+    `?latitude=${latitude}&longitude=${longitude}` +
+    '&current=temperature_2m,weather_code&timezone=Europe%2FLondon';
+
+  fetch(url)
+    .then((response) => {
+      if (!response.ok) throw new Error('Weather unavailable');
+      return response.json();
+    })
+    .then((data) => {
+      const now = data.current;
+      const [icon, description] = CONDITIONS[now.weather_code] ?? ['🌡️', 'Weather'];
+      document.getElementById('weather-icon').textContent = icon;
+      document.getElementById('weather-text').textContent =
+        `${place} ${Math.round(now.temperature_2m)}°C · ${description}`;
+      document.getElementById('weather').hidden = false;
+    })
+    // If the weather can't be fetched, the banner just shows the quote.
+    .catch(() => {});
+</script>
