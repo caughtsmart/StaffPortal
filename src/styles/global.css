@@ -3,10 +3,10 @@
    Brand colours are set as variables so they're easy to change.
    ============================================================ */
 :root {
-  --ld-ink: #1a1a1e;          /* near-black text / header */
-  --ld-red: #b8232f;          /* Loaded Dice red accent */
-  --ld-red-dark: #8f1a24;
-  --ld-gold: #d9a441;         /* subtle gold accent */
+  --ld-ink: #333333;          /* brand dark grey — header, body text */
+  --ld-accent: #fbad36;       /* brand amber — accents, highlights */
+  --ld-accent-dark: #8f5e0a;  /* darker amber: readable as text on white */
+  --ld-accent-tint: #fdf0d9;  /* pale amber: badge + quote backgrounds */
   --ld-bg: #f6f6f4;           /* page background */
   --ld-panel: #ffffff;        /* cards / content */
   --ld-line: #e4e4e0;         /* borders */
@@ -28,7 +28,7 @@ html, body {
   line-height: 1.6;
 }
 
-a { color: var(--ld-red); }
+a { color: var(--ld-accent-dark); }
 
 /* ---------- Header ---------- */
 .site-header {
@@ -42,7 +42,7 @@ a { color: var(--ld-red); }
   padding: 0 20px;
   background: var(--ld-ink);
   color: #fff;
-  border-bottom: 3px solid var(--ld-red);
+  border-bottom: 3px solid var(--ld-accent);
 }
 .site-header .brand {
   display: flex;
@@ -58,7 +58,7 @@ a { color: var(--ld-red); }
   display: block;
   font-weight: 400;
   font-size: 11px;
-  color: var(--ld-gold);
+  color: var(--ld-accent);
   letter-spacing: 1.5px;
   text-transform: uppercase;
 }
@@ -72,7 +72,7 @@ a { color: var(--ld-red); }
   gap: 14px;
   flex-wrap: wrap;
   padding: 9px 28px;
-  background: #fbf7ee;
+  background: var(--ld-accent-tint);
   border-bottom: 1px solid var(--ld-line);
   font-size: 14px;
 }
@@ -130,8 +130,8 @@ a { color: var(--ld-red); }
 }
 .sidebar li a:hover { background: #f0efec; }
 .sidebar li a[aria-current="page"] {
-  background: var(--ld-red);
-  color: #fff;
+  background: var(--ld-accent);
+  color: var(--ld-ink);
   font-weight: 600;
 }
 
@@ -153,8 +153,8 @@ a { color: var(--ld-red); }
 .content th, .content td { border: 1px solid var(--ld-line); padding: 8px 10px; text-align: left; }
 .content code { background: #efefec; padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
 .content blockquote {
-  border-left: 4px solid var(--ld-gold);
-  margin: 1rem 0; padding: 4px 16px; color: var(--ld-muted); background: #fbf7ee;
+  border-left: 4px solid var(--ld-accent);
+  margin: 1rem 0; padding: 4px 16px; color: var(--ld-muted); background: var(--ld-accent-tint);
 }
 
 .meta {
@@ -164,7 +164,7 @@ a { color: var(--ld-red); }
 }
 .badge {
   display: inline-block; font-size: 12px; font-weight: 600;
-  color: var(--ld-red-dark); background: #fbe9ea;
+  color: var(--ld-accent-dark); background: var(--ld-accent-tint);
   padding: 2px 10px; border-radius: 999px;
 }
 
@@ -181,7 +181,7 @@ a { color: var(--ld-red); }
   border-radius: 12px; padding: 16px 18px; text-decoration: none; color: var(--ld-ink);
   transition: border-color .15s, transform .15s;
 }
-.card:hover { border-color: var(--ld-red); transform: translateY(-2px); }
+.card:hover { border-color: var(--ld-accent); transform: translateY(-2px); }
 .card strong { display: block; margin-bottom: 4px; }
 .card span { font-size: 13.5px; color: var(--ld-muted); }
 
@@ -207,7 +207,7 @@ a { color: var(--ld-red); }
 /* ---------- Pagefind search box ---------- */
 :root {
   --pagefind-ui-scale: 0.8;
-  --pagefind-ui-primary: var(--ld-red);
+  --pagefind-ui-primary: var(--ld-accent-dark);
   --pagefind-ui-background: #fff;
   --pagefind-ui-border-radius: 8px;
 }

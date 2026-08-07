@@ -73,7 +73,9 @@ The page **body** is the markdown after the frontmatter. Slug/URL = the filename
 - **Add/reorder a section:** edit the list in `src/sections.ts`. Sections not listed there
   fall to the bottom.
 - **Change branding:** colours are CSS variables at the top of `src/styles/global.css`
-  (`--ld-red`, `--ld-gold`, `--ld-ink`, etc.). Logo = replace `public/logo.svg` (keep the name).
+  (`--ld-ink` dark grey `#333333`, `--ld-accent` amber `#fbad36`, plus `--ld-accent-dark` for
+  readable link text on white and `--ld-accent-tint` for pale backgrounds). Logo = replace
+  `public/logo.svg` (keep the name).
 - **Everything is private:** pages carry `noindex`; never make this publicly crawlable.
 - **British English** throughout (en-GB).
 
