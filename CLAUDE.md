@@ -74,8 +74,11 @@ The page **body** is the markdown after the frontmatter. Slug/URL = the filename
   fall to the bottom.
 - **Change branding:** colours are CSS variables at the top of `src/styles/global.css`
   (`--ld-ink` dark grey `#333333`, `--ld-accent` amber `#fbad36`, plus `--ld-accent-dark` for
-  readable link text on white and `--ld-accent-tint` for pale backgrounds). Logo = replace
-  `public/logo.svg` (keep the name).
+  readable link text on white and `--ld-accent-tint` for pale backgrounds). The header logo is
+  the white-on-transparent PNG served from the Shopify store CDN — the URL is the `LOGO`
+  constant at the top of `src/layouts/Base.astro`. To use a local file instead, put it in
+  `public/` and point `LOGO` at it (e.g. `/logo.png`). The favicon is still the local
+  `public/favicon.svg`.
 - **Everything is private:** pages carry `noindex`; never make this publicly crawlable.
 - **British English** throughout (en-GB).
 

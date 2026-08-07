@@ -4,6 +4,12 @@ import Banner from '../components/Banner.astro';
 import '../styles/global.css';
 
 const { title, currentSlug } = Astro.props;
+
+// The shop logo, served from the Shopify store's own CDN (Content > Files).
+// To use a local copy instead, drop the file in public/ and change this to
+// e.g. '/logo.png'.
+const LOGO =
+  'https://cdn.shopify.com/s/files/1/0306/5842/9059/files/loaded-dice-logo-white.png?v=1785936604';
 const pageTitle = title ? `${title} · Loaded Dice Staff Handbook` : 'Loaded Dice Staff Handbook';
 ---
 <!doctype html>
@@ -22,7 +28,7 @@ const pageTitle = title ? `${title} · Loaded Dice Staff Handbook` : 'Loaded Dic
     <header class="site-header">
       <button class="menu-toggle" aria-label="Toggle menu" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
       <a class="brand" href="/">
-        <img src="/logo.svg" alt="Loaded Dice" />
+        <img src={LOGO} alt="Loaded Dice" width="30" height="32" />
         <span>Staff Handbook<small>Loaded Dice</small></span>
       </a>
       <div class="header-spacer"></div>
