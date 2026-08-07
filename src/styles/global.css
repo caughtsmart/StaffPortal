@@ -229,13 +229,51 @@ a { color: var(--ld-accent-dark); }
   padding: 2px 10px; border-radius: 999px;
 }
 
-/* ---------- Home ---------- */
-.hero {
+/* ---------- Home / dashboard ---------- */
+.dash-hero {
   background: var(--ld-panel); border: 1px solid var(--ld-line);
-  border-radius: 14px; padding: 28px 30px; margin-bottom: 26px;
+  border-radius: 14px; padding: 28px 30px; margin-bottom: 30px;
 }
-.hero h1 { margin: 0 0 6px; }
-.hero p { margin: 0; color: var(--ld-muted); }
+.dash-hero h1 { margin: 0 0 6px; }
+.dash-hero > p { margin: 0; color: var(--ld-muted); }
+.dash-search { margin: 18px 0 10px; }
+.dash-search .pagefind-ui { --pagefind-ui-scale: 0.9; }
+.dash-stats { margin: 0 !important; font-size: 13px; color: var(--ld-muted); }
+
+.dash-block { margin-bottom: 34px; }
+.dash-block > h2 {
+  font-size: 1.15rem; margin: 0 0 14px;
+  border-bottom: 1px solid var(--ld-line); padding-bottom: 6px;
+}
+
+.recent-list { list-style: none; margin: 0; padding: 0; }
+.recent-list li {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
+  padding: 9px 0; border-bottom: 1px solid var(--ld-line);
+}
+.recent-list li:last-child { border-bottom: 0; }
+.recent-list a { font-weight: 600; text-decoration: none; }
+.recent-list a:hover { text-decoration: underline; }
+.recent-meta { font-size: 13px; color: var(--ld-muted); }
+
+.browse-group { margin-bottom: 22px; }
+.browse-group > h3 {
+  margin: 0 0 10px; font-size: 1rem;
+  color: var(--ld-ink);
+}
+.browse-section { margin: 0 0 14px 2px; }
+.browse-section > h4 {
+  margin: 0 0 6px; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1px; color: var(--ld-muted);
+}
+.browse-list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 2px 18px;
+}
+.browse-list a {
+  display: block; padding: 5px 0; text-decoration: none; font-size: 14.5px;
+}
+.browse-list a:hover { text-decoration: underline; }
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
 .card {
   display: block; background: var(--ld-panel); border: 1px solid var(--ld-line);

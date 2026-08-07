@@ -1,9 +1,13 @@
 ---
 import Base from '../layouts/Base.astro';
 import { getCollection } from 'astro:content';
-import { SECTION_ORDER } from '../sections';
+import { NAV_GROUPS } from '../sections';
+import { QUICK_LINKS, RECENT_COUNT } from '../dashboard';
 
 const pages = await getCollection('procedures');
+const bySlug = new Map(pages.map((p) => [p.slug, p]));
+
+// Group pages by section, each section sorted by `order` then title.
 const bySection = new Map();
 for (const p of pages) {
   if (!bySection.has(p.data.section)) bySection.set(p.data.section, []);
@@ -12,29 +16,96 @@ for (const p of pages) {
 for (const list of bySection.values()) {
   list.sort((a, b) => (a.data.order - b.data.order) || a.data.title.localeCompare(b.data.title));
 }
-const orderedSections = SECTION_ORDER.filter((s) => bySection.has(s));
 
-const totalPages = pages.length;
+// The shortcuts, skipping any slug that no longer exists.
+const quickLinks = QUICK_LINKS.map((slug) => bySlug.get(slug)).filter(Boolean);
+
+// Newest changes first.
+const recent = [...pages]
+  .sort((a, b) => b.data.updated.valueOf() - a.data.updated.valueOf())
+  .slice(0, RECENT_COUNT);
+
+// Only show menu groups and sections that actually have pages.
+const groups = NAV_GROUPS
+  .map((group) => ({ label: group.label, sections: group.sections.filter((s) => bySection.has(s)) }))
+  .filter((group) => group.sections.length > 0);
+
+const totalSections = groups.reduce((n, g) => n + g.sections.length, 0);
+const dateFmt = (d: Date) =>
+  d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 ---
 <Base title="Home">
-  <div class="hero">
-    <h1>Loaded Dice Staff Handbook</h1>
-    <p>The company policies and procedures for everyone at Loaded Dice. Use the search box (top right) or the menu on the left to find what you need.</p>
+  <div class="dash-hero">
+    <h1 id="dash-greeting">Welcome</h1>
+    <p>The Loaded Dice staff handbook — company policies and procedures, all in one place.</p>
+    <div class="dash-search"><div id="dashboard-search"></div></div>
+    <p class="dash-stats">{pages.length} pages across {totalSections} sections. Can't find it? Search above.</p>
   </div>
 
-  <p style="color:var(--ld-muted); margin-top:-8px;">{totalPages} pages across {orderedSections.length} sections.</p>
-
-  {orderedSections.map((section) => (
-    <section style="margin-bottom:26px;">
-      <h2>{section}</h2>
+  {quickLinks.length > 0 && (
+    <section class="dash-block">
+      <h2>Need it in a hurry</h2>
       <div class="card-grid">
-        {bySection.get(section).map((p) => (
+        {quickLinks.map((p) => (
           <a class="card" href={`/${p.slug}/`}>
             <strong>{p.data.title}</strong>
-            <span>{p.data.summary ?? 'Open procedure →'}</span>
+            <span>{p.data.summary ?? 'Open page →'}</span>
           </a>
         ))}
       </div>
     </section>
-  ))}
+  )}
+
+  <section class="dash-block">
+    <h2>Recently updated</h2>
+    <ul class="recent-list">
+      {recent.map((p) => (
+        <li>
+          <a href={`/${p.slug}/`}>{p.data.title}</a>
+          <span class="recent-meta">{p.data.section} · {dateFmt(p.data.updated)}</span>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="dash-block">
+    <h2>Browse everything</h2>
+    {groups.map((group) => (
+      <div class="browse-group">
+        <h3>{group.label}</h3>
+        {group.sections.map((section) => (
+          <div class="browse-section">
+            <h4>{section}</h4>
+            <ul class="browse-list">
+              {bySection.get(section).map((p) => (
+                <li><a href={`/${p.slug}/`}>{p.data.title}</a></li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    ))}
+  </section>
 </Base>
+
+<script is:inline>
+  // Greet by time of day, using the reader's own clock.
+  (function () {
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    const el = document.getElementById('dash-greeting');
+    if (el) el.textContent = greeting;
+  })();
+
+  // A second, larger search box just for the dashboard.
+  window.addEventListener('DOMContentLoaded', () => {
+    if (window.PagefindUI) {
+      new window.PagefindUI({
+        element: '#dashboard-search',
+        showSubResults: true,
+        showImages: false,
+        resetStyles: false,
+      });
+    }
+  });
+</script>
