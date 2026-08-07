@@ -4,8 +4,8 @@ import Base from '../layouts/Base.astro';
 <Base title="In-Store Pickups" wide>
   <h1>In-Store Pickups</h1>
   <p class="pickup-intro">
-    Unfulfilled web orders being collected from the shop. Oldest first — the customer
-    at the top has been waiting longest. The list refreshes on its own every minute.
+    Unfulfilled web orders being collected from the shop, newest first. Pre-orders are
+    listed separately below. The list refreshes on its own every minute.
   </p>
 
   <div class="pickup-toolbar">
@@ -15,20 +15,42 @@ import Base from '../layouts/Base.astro';
 
   <div id="pickup-state" class="pickup-note">Loading orders…</div>
 
-  <div class="table-scroll">
-    <table class="pickup-table" id="pickup-table" hidden>
-      <thead>
-        <tr>
-          <th>Order</th>
-          <th>Customer</th>
-          <th>Items</th>
-          <th>Stage</th>
-          <th class="pickup-actions-col">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="pickup-rows"></tbody>
-    </table>
-  </div>
+  <section class="pickup-group" id="group-standard" hidden>
+    <h2>Standard Orders <span class="pickup-count" id="count-standard"></span></h2>
+    <div class="table-scroll">
+      <table class="pickup-table">
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Customer</th>
+            <th>Items</th>
+            <th>Stage</th>
+            <th class="pickup-actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="rows-standard"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="pickup-group" id="group-preorder" hidden>
+    <h2>Pre-Orders <span class="pickup-count" id="count-preorder"></span></h2>
+    <div class="table-scroll">
+      <table class="pickup-table">
+        <thead>
+          <tr>
+            <th>Order</th>
+            <th>Customer</th>
+            <th>Items</th>
+            <th>Release</th>
+            <th>Stage</th>
+            <th class="pickup-actions-col">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="rows-preorder"></tbody>
+      </table>
+    </div>
+  </section>
 </Base>
 
 <script is:inline>
@@ -36,13 +58,22 @@ import Base from '../layouts/Base.astro';
     const REFRESH_MS = 60000;
 
     const stateEl = document.getElementById('pickup-state');
-    const tableEl = document.getElementById('pickup-table');
-    const rowsEl = document.getElementById('pickup-rows');
     const updatedEl = document.getElementById('pickup-updated');
     const refreshBtn = document.getElementById('pickup-refresh');
 
+    // The two tables: standard orders, and pre-orders with an extra Release column.
+    const TABLES = [
+      { key: 'standard', group: 'group-standard', rows: 'rows-standard', count: 'count-standard', release: false },
+      { key: 'preorder', group: 'group-preorder', rows: 'rows-preorder', count: 'count-preorder', release: true },
+    ].map((t) => ({
+      ...t,
+      groupEl: document.getElementById(t.group),
+      rowsEl: document.getElementById(t.rows),
+      countEl: document.getElementById(t.count),
+    }));
+
     let orders = [];
-    let busy = new Set();
+    const busy = new Set();
 
     const escape = (s) =>
       String(s ?? '').replace(/[&<>"']/g, (c) =>
@@ -65,44 +96,69 @@ import Base from '../layouts/Base.astro';
       return '<span class="stage stage-new">New</span>';
     }
 
+    // "2026-11-20" -> "20 Nov 2026". Left alone if it isn't a plain date.
+    function formatRelease(value) {
+      if (!value) return '<span class="release-none">—</span>';
+      const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+      if (!parts) return escape(value);
+      const date = new Date(Date.UTC(+parts[1], +parts[2] - 1, +parts[3]));
+      const text = date.toLocaleDateString('en-GB', {
+        day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
+      });
+      const due = date.getTime() <= Date.now();
+      return `<span class="release${due ? ' release-due' : ''}">${escape(text)}</span>`;
+    }
+
+    function rowHtml(order, showRelease) {
+      const items = order.items
+        .map((i) => {
+          const tag = i.preorder ? ' <span class="item-flag">pre-order</span>' : '';
+          return `<li>${escape(i.quantity)} × ${escape(i.name)}${tag}</li>`;
+        })
+        .join('');
+      const working = busy.has(order.id);
+      const dis = working ? ' disabled' : '';
+      const releaseCell = showRelease ? `<td>${formatRelease(order.releaseDate)}</td>` : '';
+
+      return `
+        <tr data-id="${escape(order.id)}"${working ? ' class="row-busy"' : ''}>
+          <td class="cell-order">${escape(order.number)}</td>
+          <td>${escape(order.customer)}</td>
+          <td><ul class="pickup-items">${items}</ul></td>
+          ${releaseCell}
+          <td>${stageLabel(order)}</td>
+          <td class="pickup-actions-col">
+            <button type="button" class="btn btn-picked${order.picked ? ' is-done' : ''}"
+              data-action="picked"${order.picked || working ? ' disabled' : ''}>
+              ${order.picked ? 'Picked ✓' : 'Picked'}
+            </button>
+            <button type="button" class="btn btn-ready${order.ready ? ' is-done' : ''}"
+              data-action="ready"${order.ready || working ? ' disabled' : ''}>
+              ${order.ready ? 'Ready ✓' : 'Ready'}
+            </button>
+            <button type="button" class="btn btn-collected" data-action="collected"${dis}>
+              Collected
+            </button>
+          </td>
+        </tr>`;
+    }
+
     function render() {
       if (orders.length === 0) {
-        tableEl.hidden = true;
+        TABLES.forEach((t) => { t.groupEl.hidden = true; });
         setState('Nothing waiting to be collected. 🎉', 'good');
         return;
       }
-
       setState('');
-      tableEl.hidden = false;
-      rowsEl.innerHTML = orders
-        .map((o) => {
-          const items = o.items
-            .map((i) => `<li>${escape(i.quantity)} × ${escape(i.name)}</li>`)
-            .join('');
-          const working = busy.has(o.id);
-          const dis = working ? ' disabled' : '';
-          return `
-            <tr data-id="${escape(o.id)}"${working ? ' class="row-busy"' : ''}>
-              <td class="cell-order">${escape(o.number)}</td>
-              <td>${escape(o.customer)}</td>
-              <td><ul class="pickup-items">${items}</ul></td>
-              <td>${stageLabel(o)}</td>
-              <td class="pickup-actions-col">
-                <button type="button" class="btn btn-picked${o.picked ? ' is-done' : ''}"
-                  data-action="picked"${o.picked || working ? ' disabled' : ''}>
-                  ${o.picked ? 'Picked ✓' : 'Picked'}
-                </button>
-                <button type="button" class="btn btn-ready${o.ready ? ' is-done' : ''}"
-                  data-action="ready"${o.ready || working ? ' disabled' : ''}>
-                  ${o.ready ? 'Ready ✓' : 'Ready'}
-                </button>
-                <button type="button" class="btn btn-collected" data-action="collected"${dis}>
-                  Collected
-                </button>
-              </td>
-            </tr>`;
-        })
-        .join('');
+
+      for (const table of TABLES) {
+        const mine = orders.filter((o) =>
+          table.key === 'preorder' ? o.isPreorder : !o.isPreorder
+        );
+        table.groupEl.hidden = mine.length === 0;
+        table.countEl.textContent = mine.length ? `(${mine.length})` : '';
+        table.rowsEl.innerHTML = mine.map((o) => rowHtml(o, table.release)).join('');
+      }
     }
 
     async function load(showSpinner) {
@@ -118,7 +174,7 @@ import Base from '../layouts/Base.astro';
           minute: '2-digit',
         });
       } catch (error) {
-        tableEl.hidden = true;
+        TABLES.forEach((t) => { t.groupEl.hidden = true; });
         setState('Could not load orders: ' + error.message, 'bad');
       }
     }
@@ -167,13 +223,15 @@ import Base from '../layouts/Base.astro';
       }
     }
 
-    rowsEl.addEventListener('click', (event) => {
-      const button = event.target.closest('button[data-action]');
-      if (!button || button.disabled) return;
-      const id = button.closest('tr')?.dataset.id;
-      const order = orders.find((o) => o.id === id);
-      if (order) act(order, button.dataset.action);
-    });
+    for (const table of TABLES) {
+      table.rowsEl.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-action]');
+        if (!button || button.disabled) return;
+        const id = button.closest('tr')?.dataset.id;
+        const order = orders.find((o) => o.id === id);
+        if (order) act(order, button.dataset.action);
+      });
+    }
 
     refreshBtn.addEventListener('click', () => load(true));
 

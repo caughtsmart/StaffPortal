@@ -31,14 +31,20 @@ const API_VERSION = '2025-07';
 const PICKED_TAG = 'Picked';
 const READY_TAG = 'Ready for Collection';
 
-// How many unfulfilled orders to look through. 50 per request, so 5 pages is
-// the 250 most recent unfulfilled orders — far more than a day's pickups.
-const MAX_PAGES = 5;
+// How many unfulfilled orders to look through. 25 per request (kept modest
+// because each order now pulls product details too), so 12 pages covers the 300
+// most recent unfulfilled orders.
+//
+// NOTE: Shopify only lets an app see the last 60 days of orders unless the shop
+// has been granted the `read_all_orders` scope. Pre-orders are often placed
+// months before release, so without that scope older pre-orders are invisible
+// to this board no matter how many pages we read. See README-PICKUPS.md.
+const MAX_PAGES = 12;
 
 const ORDERS_QUERY = `
   query PickupOrders($cursor: String) {
     orders(
-      first: 50
+      first: 25
       after: $cursor
       query: "fulfillment_status:unfulfilled AND status:open"
       sortKey: CREATED_AT
@@ -54,7 +60,19 @@ const ORDERS_QUERY = `
         shippingAddress { name }
         shippingLine { title }
         fulfillmentOrders(first: 10) { nodes { id status } }
-        lineItems(first: 50) { nodes { name quantity sku } }
+        lineItems(first: 25) {
+          nodes {
+            name
+            quantity
+            sku
+            product {
+              id
+              tags
+              preorderFlag: metafield(namespace: "custom", key: "preorder") { value }
+              releaseDate: metafield(namespace: "custom", key: "release_date") { value }
+            }
+          }
+        }
       }
     }
   }
@@ -202,9 +220,54 @@ function isPickup(order, title) {
   return (order.shippingLine?.title ?? '').trim().toLowerCase() === title.trim().toLowerCase();
 }
 
+/**
+ * Is this line a pre-order, and when is it due?
+ *
+ * Both live on the PRODUCT, and the store marks them two different ways:
+ *  - a product tag `Preorder` (on every pre-order product we found), and
+ *  - sometimes a `custom.preorder` boolean metafield (only on some of them).
+ * Either counts, so a product tagged but not metafielded still lands correctly.
+ *
+ * The release date is a product tag in the form `Release 2026-11-20`. There is
+ * no release-date metafield on these products today, so the tag is the real
+ * source — but a `custom.release_date` metafield wins if one ever gets added.
+ */
+const RELEASE_TAG = /^release\s+(\d{4}-\d{2}-\d{2})$/i;
+
+function readProduct(product) {
+  const tags = product?.tags ?? [];
+  const taggedPreorder = tags.some((t) => t.trim().toLowerCase() === 'preorder');
+  const flaggedPreorder = String(product?.preorderFlag?.value ?? '').toLowerCase() === 'true';
+
+  let release = product?.releaseDate?.value || null;
+  if (!release) {
+    for (const tag of tags) {
+      const match = tag.trim().match(RELEASE_TAG);
+      if (match) {
+        release = match[1];
+        break;
+      }
+    }
+  }
+  // Trim a full timestamp down to just the date.
+  if (release && release.length > 10) release = release.slice(0, 10);
+
+  return { preorder: taggedPreorder || flaggedPreorder, release };
+}
+
 /** Turn a Shopify order into just what the board needs. */
 function toCard(order) {
   const tags = order.tags ?? [];
+  const lines = (order.lineItems?.nodes ?? []).map((li) => ({
+    ...li,
+    ...readProduct(li.product),
+  }));
+
+  // An order counts as a pre-order if anything on it is one. The date shown is
+  // the LATEST of them, because that's when the order can actually be handed
+  // over complete.
+  const releaseDates = lines.filter((l) => l.preorder && l.release).map((l) => l.release).sort();
+
   return {
     id: order.id,
     number: order.name,
@@ -215,11 +278,15 @@ function toCard(order) {
     // read_customers permission the app doesn't have (and doesn't need).
     customer: order.shippingAddress?.name || order.email || 'Guest',
     email: order.email || null,
-    items: (order.lineItems?.nodes ?? []).map((li) => ({
-      name: li.name,
-      quantity: li.quantity,
-      sku: li.sku,
+    items: lines.map((l) => ({
+      name: l.name,
+      quantity: l.quantity,
+      sku: l.sku,
+      preorder: l.preorder,
+      release: l.release,
     })),
+    isPreorder: lines.some((l) => l.preorder),
+    releaseDate: releaseDates.length ? releaseDates[releaseDates.length - 1] : null,
     picked: tags.includes(PICKED_TAG),
     ready: tags.includes(READY_TAG),
     fulfillmentOrderIds: (order.fulfillmentOrders?.nodes ?? [])
@@ -248,8 +315,7 @@ export async function onRequestGet({ env }) {
       cursor = orders.pageInfo.endCursor;
     }
 
-    // Oldest first: the person who has waited longest is at the top.
-    pickups.reverse();
+    // Newest first — the query already comes back that way.
     return json({ ok: true, orders: pickups });
   } catch (error) {
     return json({ ok: false, error: error.message }, 500);

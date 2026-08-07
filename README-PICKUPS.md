@@ -125,6 +125,29 @@ email — the customer is standing at the counter. If you'd rather it did, chang
 
 ---
 
+## ⚠️ The 60-day limit (matters most for pre-orders)
+
+**Shopify only lets an app see the last 60 days of orders.** That's a Shopify
+rule, not a setting in this code — no amount of paging gets round it.
+
+For ordinary pickups that's harmless. For **pre-orders it isn't**: someone who
+pre-ordered a November release back in August is more than 60 days old, so their
+order simply won't appear on the board.
+
+To fix it you have to ask Shopify for the `read_all_orders` scope:
+
+1. In the **Dev Dashboard**, open the app → **API access**.
+2. Find **Read all orders** under access requests and click **Request access**.
+3. Describe why: an internal board for staff to manage in-store collections,
+   including pre-orders placed months before release.
+4. Once Shopify approves, add `read_all_orders` to the app's scopes alongside
+   `read_orders`.
+
+Approval is usually quick for a store's own internal app. Until then, treat the
+Pre-Orders table as "recent pre-orders only".
+
+---
+
 ## Which orders appear
 
 Unfulfilled, open orders whose shipping method is called **In Store Pickup**.
@@ -136,5 +159,29 @@ only reliable signal, which is why `PICKUP_SHIPPING_TITLE` exists. **If someone
 renames that rate in Shipx, the board will go empty** — that's the first thing to
 check if it ever does.
 
-The board looks through the 250 most recent unfulfilled orders, refreshes itself
-every minute, and lists the longest wait first.
+The board looks through the 300 most recent unfulfilled orders, refreshes itself
+every minute, and lists newest first.
+
+### Standard Orders vs Pre-Orders
+
+An order lands in **Pre-Orders** if any item on it is a pre-order. That's read
+from the **product**, two ways — either is enough:
+
+- the product tag `Preorder`, or
+- the `custom.preorder` metafield set to true.
+
+Both are checked because in your catalogue the tag is on every pre-order product
+while the metafield is only on some of them.
+
+The **Release** column comes from the product tag `Release 2026-11-20`, which is
+where these dates actually live — there's no release-date metafield on those
+products today. If you ever add a `custom.release_date` metafield, that wins.
+Where an order has several pre-order items, the column shows the **latest** date,
+since that's when the order can be handed over complete. A date in the past is
+highlighted, meaning it should have arrived.
+
+One thing to know: this reads the product's status **now**, not at the moment of
+purchase — Shopify doesn't record that on the order. So when a product releases
+and you clear its `Preorder` tag, any outstanding orders for it move into
+Standard Orders. That's usually what you want, but it's worth knowing why a row
+moved table.
