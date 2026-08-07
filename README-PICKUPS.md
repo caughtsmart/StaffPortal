@@ -27,20 +27,27 @@ anyone. Don't.
 
 ## Step 1 — Give it a Shopify key
 
-1. In **Shopify admin** → **Settings** → **Apps and sales channels** →
-   **Develop apps** → **Create an app**. Name it `Staff Portal Pickups`.
-2. Open **Configuration** → **Admin API integration** → **Configure**, and tick
-   these four:
-   - `read_orders`
-   - `write_orders`
-   - `read_merchant_managed_fulfillment_orders`
-   - `write_merchant_managed_fulfillment_orders`
-3. **Save**, then go to **API credentials** → **Install app**.
-4. Copy the **Admin API access token** (starts `shpat_`). Shopify shows it once —
-   copy it now.
+> **Note:** Shopify retired the old *Settings → Apps → Develop apps* route on
+> **1 January 2026**. New apps are made in the **Dev Dashboard** instead. You no
+> longer get a permanent password — you get an ID and a secret, and the site
+> swaps them for a 24-hour token whenever it needs one. It does that by itself;
+> there is nothing to renew.
 
-> That token can read and change your orders. Treat it like a bank password: paste
-> it straight into step 2 and don't email it or put it in a document.
+1. Go to the **Dev Dashboard** at **shopify.dev/dashboard** and sign in with the
+   same account you use for the shop.
+2. **Apps** → **Create app**. Name it `Staff Portal Pickups`.
+3. Set the app's **access scopes** to these four, and nothing else:
+   - `read_orders` — see the orders
+   - `write_orders` — add the Picked / Ready tags
+   - `read_merchant_managed_fulfillment_orders` — see what's left to fulfil
+   - `write_merchant_managed_fulfillment_orders` — mark it collected
+4. **Install** the app on the Loaded Dice store. (It must be installed, or the
+   ID and secret won't open anything.)
+5. Open the app's **Settings** page and copy the **Client ID** and
+   **Client secret**.
+
+> The secret can read and change your orders. Treat it like a bank password:
+> paste it straight into step 2, don't email it, and don't put it in a document.
 
 ---
 
@@ -52,10 +59,11 @@ In **Cloudflare dashboard** → **Workers & Pages** → your **StaffPortal** pro
 | Name | Value | Type |
 |------|-------|------|
 | `SHOPIFY_STORE` | `orcs-bazaar.myshopify.com` | Plaintext |
-| `SHOPIFY_ADMIN_TOKEN` | the `shpat_…` token from step 1 | **Secret** |
+| `SHOPIFY_CLIENT_ID` | the Client ID from step 1 | Plaintext |
+| `SHOPIFY_CLIENT_SECRET` | the Client secret from step 1 | **Secret** |
 
-Use the **Secret** type for the token — that encrypts it so nobody can read it
-back out afterwards.
+Use the **Secret** type for the client secret — that encrypts it so nobody can
+read it back out afterwards.
 
 Then **Deployments** → **⋯** → **Retry deployment** so it picks them up. Visit
 **ldhq.uk/shop** and your pickups should appear.

@@ -12,10 +12,16 @@
 //
 // Settings live in Cloudflare Pages > Settings > Environment variables:
 //   SHOPIFY_STORE          e.g. orcs-bazaar.myshopify.com
-//   SHOPIFY_ADMIN_TOKEN    the Admin API access token  (add as a SECRET)
+//   SHOPIFY_CLIENT_ID      from the app's Settings page in the Dev Dashboard
+//   SHOPIFY_CLIENT_SECRET  same page  (add as a SECRET)
 //   READY_EMAIL_URL        (optional) your Google Apps Script web app address
 //   READY_EMAIL_SECRET     (optional) shared password the Apps Script checks
 //   PICKUP_SHIPPING_TITLE  (optional) defaults to "In Store Pickup"
+//
+// If you happen to have an older app that gave you a permanent "shpat_" token,
+// you can set SHOPIFY_ADMIN_TOKEN instead of the client ID and secret, and this
+// will use that. Shopify stopped issuing those on 1 January 2026, so most people
+// will use the client ID and secret above.
 // ---------------------------------------------------------------------------
 
 const API_VERSION = '2025-07';
@@ -72,13 +78,68 @@ const FULFILL = `
   }
 `;
 
+// Shopify's newer apps don't hand out a permanent password. Instead you swap a
+// client ID and secret for a token that only lasts 24 hours. We keep the token
+// in memory and swap for a fresh one shortly before it runs out, so the board
+// isn't doing that dance on every refresh.
+let cachedToken = null; // { key, value, expiresAt } — key ties it to the credentials used
+
+async function getAccessToken(env) {
+  // An older-style permanent token, if you have one, wins and needs no swapping.
+  if (env.SHOPIFY_ADMIN_TOKEN) return env.SHOPIFY_ADMIN_TOKEN;
+
+  if (!env.SHOPIFY_CLIENT_ID || !env.SHOPIFY_CLIENT_SECRET) {
+    throw new Error(
+      'Shopify is not set up yet: add SHOPIFY_CLIENT_ID and SHOPIFY_CLIENT_SECRET in Cloudflare.'
+    );
+  }
+
+  // Re-use the token until it has a minute left on it. The key means that if
+  // the store or the app's ID ever changes, we fetch a fresh one rather than
+  // carrying on with a token for the old one.
+  const key = `${env.SHOPIFY_STORE}:${env.SHOPIFY_CLIENT_ID}`;
+  if (cachedToken && cachedToken.key === key && cachedToken.expiresAt - Date.now() > 60_000) {
+    return cachedToken.value;
+  }
+
+  const response = await fetch(`https://${env.SHOPIFY_STORE}/admin/oauth/access_token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'client_credentials',
+      client_id: env.SHOPIFY_CLIENT_ID,
+      client_secret: env.SHOPIFY_CLIENT_SECRET,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Shopify refused the app's ID and secret (${response.status}). ` +
+        `Check them, and that the app is installed on the store.`
+    );
+  }
+
+  const body = await response.json();
+  if (!body.access_token) {
+    throw new Error('Shopify did not return an access token.');
+  }
+
+  cachedToken = {
+    key,
+    value: body.access_token,
+    // expires_in is in seconds, and is 24 hours in practice.
+    expiresAt: Date.now() + (body.expires_in ?? 86399) * 1000,
+  };
+  return cachedToken.value;
+}
+
 /** Call the Shopify Admin API and hand back the `data` block. */
 async function shopify(env, query, variables = {}) {
   const store = env.SHOPIFY_STORE;
-  const token = env.SHOPIFY_ADMIN_TOKEN;
-  if (!store || !token) {
-    throw new Error('Shopify is not set up yet: SHOPIFY_STORE and SHOPIFY_ADMIN_TOKEN are missing.');
+  if (!store) {
+    throw new Error('Shopify is not set up yet: SHOPIFY_STORE is missing.');
   }
+  const token = await getAccessToken(env);
 
   const response = await fetch(`https://${store}/admin/api/${API_VERSION}/graphql.json`, {
     method: 'POST',
