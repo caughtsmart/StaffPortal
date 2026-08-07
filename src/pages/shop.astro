@@ -169,7 +169,14 @@ import Base from '../layouts/Base.astro';
         if (!data.ok) throw new Error(data.error || 'Could not load orders.');
         orders = data.orders;
         render();
-        if (data.truncated) {
+        if (data.productAccess === false) {
+          setState(
+            'Showing all pickups in one list: the Shopify app is missing the read_products ' +
+              'permission, so pre-orders and release dates can\'t be identified. Add ' +
+              'read_products to the app and the split comes back on its own.',
+            'warn'
+          );
+        } else if (data.truncated) {
           setState(
             `Showing the ${data.scanned} most recent unfulfilled orders — there are more than ` +
               `that, so anything older is not listed here.`,

@@ -36,11 +36,14 @@ anyone. Don't.
 1. Go to the **Dev Dashboard** at **shopify.dev/dashboard** and sign in with the
    same account you use for the shop.
 2. **Apps** → **Create app**. Name it `Staff Portal Pickups`.
-3. Set the app's **access scopes** to these four, and nothing else:
+3. Set the app's **access scopes** to these, and nothing else:
    - `read_orders` — see the orders
    - `write_orders` — add the Picked / Ready tags
+   - `read_products` — read the pre-order flag and Release Date off the product
    - `read_merchant_managed_fulfillment_orders` — see what's left to fulfil
    - `write_merchant_managed_fulfillment_orders` — mark it collected
+   - `read_all_orders` — see orders older than 60 days (needs Shopify's approval;
+     see "Seeing older orders" below)
 4. **Install** the app on the Loaded Dice store. (It must be installed, or the
    ID and secret won't open anything.)
 5. Open the app's **Settings** page and copy the **Client ID** and
@@ -164,6 +167,10 @@ from the **product**, two ways — either is enough:
 
 Both are checked because in your catalogue the tag is on every pre-order product
 while the metafield is only on some of them.
+
+Both of those live on the product, so this needs the `read_products` scope. If
+that permission is ever missing, the board doesn't fall over — it shows every
+pickup in a single list and says why at the top.
 
 The **Release** column comes from the product metafield **`custom.release_date`**
 ("Release Date", a date field) and nothing else. Products also carry a

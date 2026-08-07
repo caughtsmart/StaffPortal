@@ -40,7 +40,18 @@ const READY_TAG = 'Ready for Collection';
 // Shopify app. That has been granted for this store.
 const MAX_PAGES = 20;
 
-const ORDERS_QUERY = `
+const PRODUCT_BLOCK = `
+            product {
+              id
+              tags
+              preorderFlag: metafield(namespace: "custom", key: "preorder") { value }
+              releaseDate: metafield(namespace: "custom", key: "release_date") { value }
+            }`;
+
+// Reading the product needs the `read_products` scope. If that is ever missing,
+// we re-run this same query without the product block so the board still works —
+// just without the pre-order split. Better a usable board than a blank one.
+const ordersQuery = (withProduct) => `
   query PickupOrders($cursor: String) {
     orders(
       first: 25
@@ -63,19 +74,17 @@ const ORDERS_QUERY = `
           nodes {
             name
             quantity
-            sku
-            product {
-              id
-              tags
-              preorderFlag: metafield(namespace: "custom", key: "preorder") { value }
-              releaseDate: metafield(namespace: "custom", key: "release_date") { value }
-            }
+            sku${withProduct ? PRODUCT_BLOCK : ''}
           }
         }
       }
     }
   }
 `;
+
+/** Does this Shopify complaint mean we lack permission to read products? */
+const isProductAccessError = (message) =>
+  /access denied for product/i.test(message) || /read_products/i.test(message);
 
 const TAGS_ADD = `
   mutation AddTag($id: ID!, $tags: [String!]!) {
@@ -293,9 +302,22 @@ export async function onRequestGet({ env }) {
     const pickups = [];
     let cursor = null;
     let truncated = false;
+    let productAccess = true;
 
     for (let page = 0; page < MAX_PAGES; page++) {
-      const data = await shopify(env, ORDERS_QUERY, { cursor });
+      let data;
+      try {
+        data = await shopify(env, ordersQuery(productAccess), { cursor });
+      } catch (error) {
+        // No permission to read products: carry on without the pre-order split
+        // rather than showing staff an empty board.
+        if (productAccess && isProductAccessError(error.message)) {
+          productAccess = false;
+          data = await shopify(env, ordersQuery(false), { cursor });
+        } else {
+          throw error;
+        }
+      }
       const orders = data.orders;
 
       for (const order of orders.nodes) {
@@ -309,7 +331,7 @@ export async function onRequestGet({ env }) {
     }
 
     // Newest first — the query already comes back that way.
-    return json({ ok: true, orders: pickups, truncated, scanned: MAX_PAGES * 25 });
+    return json({ ok: true, orders: pickups, truncated, productAccess, scanned: MAX_PAGES * 25 });
   } catch (error) {
     return json({ ok: false, error: error.message }, 500);
   }
