@@ -1,0 +1,183 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="In-Store Pickups" wide>
+  <h1>In-Store Pickups</h1>
+  <p class="pickup-intro">
+    Unfulfilled web orders being collected from the shop. Oldest first — the customer
+    at the top has been waiting longest. The list refreshes on its own every minute.
+  </p>
+
+  <div class="pickup-toolbar">
+    <button type="button" class="btn btn-quiet" id="pickup-refresh">Refresh now</button>
+    <span class="pickup-updated" id="pickup-updated"></span>
+  </div>
+
+  <div id="pickup-state" class="pickup-note">Loading orders…</div>
+
+  <div class="table-scroll">
+    <table class="pickup-table" id="pickup-table" hidden>
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Customer</th>
+          <th>Items</th>
+          <th>Stage</th>
+          <th class="pickup-actions-col">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="pickup-rows"></tbody>
+    </table>
+  </div>
+</Base>
+
+<script is:inline>
+  (function () {
+    const REFRESH_MS = 60000;
+
+    const stateEl = document.getElementById('pickup-state');
+    const tableEl = document.getElementById('pickup-table');
+    const rowsEl = document.getElementById('pickup-rows');
+    const updatedEl = document.getElementById('pickup-updated');
+    const refreshBtn = document.getElementById('pickup-refresh');
+
+    let orders = [];
+    let busy = new Set();
+
+    const escape = (s) =>
+      String(s ?? '').replace(/[&<>"']/g, (c) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
+      );
+
+    function setState(message, kind) {
+      if (!message) {
+        stateEl.hidden = true;
+        return;
+      }
+      stateEl.hidden = false;
+      stateEl.className = 'pickup-note' + (kind ? ' pickup-note-' + kind : '');
+      stateEl.textContent = message;
+    }
+
+    function stageLabel(order) {
+      if (order.ready) return '<span class="stage stage-ready">Ready</span>';
+      if (order.picked) return '<span class="stage stage-picked">Picked</span>';
+      return '<span class="stage stage-new">New</span>';
+    }
+
+    function render() {
+      if (orders.length === 0) {
+        tableEl.hidden = true;
+        setState('Nothing waiting to be collected. 🎉', 'good');
+        return;
+      }
+
+      setState('');
+      tableEl.hidden = false;
+      rowsEl.innerHTML = orders
+        .map((o) => {
+          const items = o.items
+            .map((i) => `<li>${escape(i.quantity)} × ${escape(i.name)}</li>`)
+            .join('');
+          const working = busy.has(o.id);
+          const dis = working ? ' disabled' : '';
+          return `
+            <tr data-id="${escape(o.id)}"${working ? ' class="row-busy"' : ''}>
+              <td class="cell-order">${escape(o.number)}</td>
+              <td>${escape(o.customer)}</td>
+              <td><ul class="pickup-items">${items}</ul></td>
+              <td>${stageLabel(o)}</td>
+              <td class="pickup-actions-col">
+                <button type="button" class="btn btn-picked${o.picked ? ' is-done' : ''}"
+                  data-action="picked"${o.picked || working ? ' disabled' : ''}>
+                  ${o.picked ? 'Picked ✓' : 'Picked'}
+                </button>
+                <button type="button" class="btn btn-ready${o.ready ? ' is-done' : ''}"
+                  data-action="ready"${o.ready || working ? ' disabled' : ''}>
+                  ${o.ready ? 'Ready ✓' : 'Ready'}
+                </button>
+                <button type="button" class="btn btn-collected" data-action="collected"${dis}>
+                  Collected
+                </button>
+              </td>
+            </tr>`;
+        })
+        .join('');
+    }
+
+    async function load(showSpinner) {
+      if (showSpinner) setState('Loading orders…');
+      try {
+        const response = await fetch('/api/pickups', { headers: { Accept: 'application/json' } });
+        const data = await response.json();
+        if (!data.ok) throw new Error(data.error || 'Could not load orders.');
+        orders = data.orders;
+        render();
+        updatedEl.textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      } catch (error) {
+        tableEl.hidden = true;
+        setState('Could not load orders: ' + error.message, 'bad');
+      }
+    }
+
+    async function act(order, action) {
+      if (action === 'collected') {
+        const ok = window.confirm(
+          `Mark ${order.number} as collected?\n\nThis fulfils the order in Shopify and removes it ` +
+            `from this list. It will not come back.`
+        );
+        if (!ok) return;
+      }
+
+      busy.add(order.id);
+      render();
+
+      try {
+        const response = await fetch('/api/pickups', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action,
+            orderId: order.id,
+            fulfillmentOrderIds: order.fulfillmentOrderIds,
+            number: order.number,
+            customer: order.customer,
+            email: order.email,
+            items: order.items,
+          }),
+        });
+        const data = await response.json();
+        if (!data.ok) throw new Error(data.error || 'That did not work.');
+
+        if (action === 'ready' && data.emailed === false) {
+          setState(
+            `${order.number} is marked ready, but the email did not send: ${data.emailError}. ` +
+              `Give the customer a ring.`,
+            'warn'
+          );
+        }
+      } catch (error) {
+        setState(`${order.number}: ${error.message}`, 'bad');
+      } finally {
+        busy.delete(order.id);
+        await load(false);
+      }
+    }
+
+    rowsEl.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-action]');
+      if (!button || button.disabled) return;
+      const id = button.closest('tr')?.dataset.id;
+      const order = orders.find((o) => o.id === id);
+      if (order) act(order, button.dataset.action);
+    });
+
+    refreshBtn.addEventListener('click', () => load(true));
+
+    load(true);
+    setInterval(() => load(false), REFRESH_MS);
+  })();
+</script>

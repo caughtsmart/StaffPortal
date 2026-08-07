@@ -3,7 +3,8 @@ import Sidebar from '../components/Sidebar.astro';
 import Banner from '../components/Banner.astro';
 import '../styles/global.css';
 
-const { title, currentSlug } = Astro.props;
+// `wide` gives a roomier column — handy for pages with a big table.
+const { title, currentSlug, wide } = Astro.props;
 
 // The shop logo, served from the Shopify store's own CDN (Content > Files).
 // To use a local copy instead, drop the file in public/ and change this to
@@ -40,7 +41,7 @@ const pageTitle = title ? `${title} · Loaded Dice Staff Handbook` : 'Loaded Dic
     <div class="layout">
       <Sidebar currentSlug={currentSlug} />
       <main class="content-wrap">
-        <article class="content">
+        <article class:list={['content', wide && 'content-wide']}>
           <slot />
         </article>
       </main>

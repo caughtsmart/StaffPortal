@@ -22,9 +22,16 @@ const holdsCurrentPage = (section: string) =>
   (bySection.get(section) ?? []).some((p) => p.slug === currentSlug);
 
 // Build the groups, keeping only sections that actually have pages.
+const here = Astro.url.pathname;
 const groups = NAV_GROUPS.map((group) => {
   const sections = group.sections.filter((s) => bySection.has(s));
-  return { ...group, sections, hasCurrentPage: sections.some(holdsCurrentPage) };
+  const links = group.links ?? [];
+  return {
+    ...group,
+    sections,
+    links,
+    hasCurrentPage: sections.some(holdsCurrentPage) || links.some((l) => l.href === here),
+  };
 });
 
 // Any section not listed in a group still gets shown, at the end.
@@ -37,7 +44,18 @@ const ungrouped = [...bySection.keys()].filter((s) => !grouped.has(s));
   {groups.map((group) => (
     <details class="nav-group" open={group.hasCurrentPage || group.openByDefault}>
       <summary>{group.label}</summary>
-      {group.sections.length === 0 && <p class="nav-empty">Nothing here yet.</p>}
+      {group.links.length > 0 && (
+        <ul>
+          {group.links.map((link) => (
+            <li>
+              <a href={link.href} aria-current={link.href === here ? 'page' : undefined}>{link.label}</a>
+            </li>
+          ))}
+        </ul>
+      )}
+      {group.sections.length === 0 && group.links.length === 0 && (
+        <p class="nav-empty">Nothing here yet.</p>
+      )}
       {group.sections.map((section) => (
         <details class="nav-section" open={holdsCurrentPage(section)}>
           <summary>{section}</summary>

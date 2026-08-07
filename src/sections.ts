@@ -9,9 +9,17 @@
 //
 // To add a section: add its name to the right group here, AND to the list in
 // public/admin/config.yml so editors can pick it in the web editor.
-export const NAV_GROUPS: { label: string; sections: string[]; openByDefault?: boolean }[] = [
+// `links` are fixed pages (built by hand rather than from a markdown file).
+// They appear at the top of their group, above the sections.
+export const NAV_GROUPS: {
+  label: string;
+  sections: string[];
+  links?: { href: string; label: string }[];
+  openByDefault?: boolean;
+}[] = [
   {
     label: 'Shop',
+    links: [{ href: '/shop/', label: 'In-Store Pickups' }],
     sections: [
       'Opening & Closing',
       'Till & Payments',

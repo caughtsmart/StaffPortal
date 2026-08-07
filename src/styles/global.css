@@ -204,6 +204,7 @@ a { color: var(--ld-accent-dark); }
   padding: 34px 28px 80px;
 }
 .content { width: 100%; max-width: 760px; }
+.content-wide { max-width: 1150px; }
 
 /* ---------- Article ---------- */
 .content h1 { font-size: 2rem; margin: 0 0 6px; line-height: 1.2; }
@@ -283,6 +284,69 @@ a { color: var(--ld-accent-dark); }
 .card:hover { border-color: var(--ld-accent); transform: translateY(-2px); }
 .card strong { display: block; margin-bottom: 4px; }
 .card span { font-size: 13.5px; color: var(--ld-muted); }
+
+/* ---------- In-store pickups board ---------- */
+.pickup-intro { color: var(--ld-muted); margin-top: 0; }
+.pickup-toolbar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 14px;
+}
+.pickup-updated { font-size: 13px; color: var(--ld-muted); }
+
+.pickup-note {
+  padding: 12px 14px; border-radius: 10px; font-size: 14px;
+  background: var(--ld-panel); border: 1px solid var(--ld-line); color: var(--ld-muted);
+  margin-bottom: 16px;
+}
+.pickup-note-good { background: var(--ld-accent-tint); border-color: var(--ld-accent); color: var(--ld-ink); }
+.pickup-note-warn { background: var(--ld-accent-tint); border-color: var(--ld-accent); color: var(--ld-ink); }
+.pickup-note-bad { background: #fdecec; border-color: #e7b4b4; color: #8f1a24; }
+
+.table-scroll { overflow-x: auto; }
+.pickup-table {
+  width: 100%; border-collapse: collapse; background: var(--ld-panel);
+  border: 1px solid var(--ld-line); border-radius: 12px; overflow: hidden;
+  font-size: 14.5px;
+}
+.pickup-table th, .pickup-table td {
+  text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--ld-line);
+  vertical-align: top;
+}
+.pickup-table thead th {
+  background: #faf9f7; font-size: 12px; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--ld-muted);
+}
+.pickup-table tbody tr:last-child td { border-bottom: 0; }
+.pickup-table .row-busy { opacity: 0.55; }
+.cell-order { font-weight: 700; white-space: nowrap; }
+.pickup-items { margin: 0; padding-left: 16px; }
+.pickup-items li { margin: 0 0 2px; }
+.pickup-actions-col { white-space: nowrap; }
+
+.stage {
+  display: inline-block; font-size: 12px; font-weight: 600;
+  padding: 2px 10px; border-radius: 999px; white-space: nowrap;
+}
+.stage-new { background: #eeeeea; color: var(--ld-muted); }
+.stage-picked { background: var(--ld-accent-tint); color: var(--ld-accent-dark); }
+.stage-ready { background: var(--ld-accent); color: var(--ld-ink); }
+
+.btn {
+  font: inherit; font-size: 13px; font-weight: 600;
+  padding: 6px 12px; margin: 2px 4px 2px 0;
+  border-radius: 8px; border: 1px solid var(--ld-line);
+  background: var(--ld-panel); color: var(--ld-ink); cursor: pointer;
+}
+.btn:hover:not(:disabled) { border-color: var(--ld-accent); }
+.btn:disabled { cursor: default; opacity: 0.6; }
+.btn-quiet { font-weight: 500; }
+.btn-ready:not(:disabled) { background: var(--ld-accent); border-color: var(--ld-accent); }
+.btn-collected:not(:disabled) { background: var(--ld-ink); border-color: var(--ld-ink); color: #fff; }
+.btn.is-done { background: var(--ld-accent-tint); border-color: var(--ld-accent); opacity: 1; }
+
+@media (max-width: 860px) {
+  .pickup-table { font-size: 13.5px; }
+  .pickup-table th, .pickup-table td { padding: 8px 9px; }
+}
 
 /* ---------- Footer ---------- */
 .site-footer {
