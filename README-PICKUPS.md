@@ -54,16 +54,18 @@ anyone. Don't.
 ## Step 2 — Tell Cloudflare about it
 
 In **Cloudflare dashboard** → **Workers & Pages** → your **StaffPortal** project →
-**Settings** → **Environment variables**, add these to **Production**:
+**Settings** → **Variables and Secrets** → **Add**, add these three:
 
-| Name | Value | Type |
-|------|-------|------|
+| Variable name | Value | Type |
+|---------------|-------|------|
 | `SHOPIFY_STORE` | `orcs-bazaar.myshopify.com` | Plaintext |
 | `SHOPIFY_CLIENT_ID` | the Client ID from step 1 | Plaintext |
 | `SHOPIFY_CLIENT_SECRET` | the Client secret from step 1 | **Secret** |
 
-Use the **Secret** type for the client secret — that encrypts it so nobody can
-read it back out afterwards.
+Choose **Secret** (or tick **Encrypt**) for the client secret — that encrypts it,
+so nobody can read it back out afterwards, not even you. Copy it carefully.
+
+Make sure you're adding them to **Production**, not Preview.
 
 Then **Deployments** → **⋯** → **Retry deployment** so it picks them up. Visit
 **ldhq.uk/shop** and your pickups should appear.
