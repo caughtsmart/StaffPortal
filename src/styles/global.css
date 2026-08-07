@@ -318,6 +318,9 @@ a { color: var(--ld-accent-dark); }
 .pickup-table tbody tr:last-child td { border-bottom: 0; }
 .pickup-table .row-busy { opacity: 0.55; }
 .cell-order { font-weight: 700; white-space: nowrap; }
+.cell-ordered { white-space: nowrap; }
+.ordered-date { display: block; }
+.ordered-time { display: block; font-size: 12px; color: var(--ld-muted); }
 .pickup-items { margin: 0; padding-left: 16px; }
 .pickup-items li { margin: 0 0 2px; }
 .pickup-actions-col { white-space: nowrap; }

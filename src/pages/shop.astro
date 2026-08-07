@@ -22,6 +22,7 @@ import Base from '../layouts/Base.astro';
         <thead>
           <tr>
             <th>Order</th>
+            <th>Ordered</th>
             <th>Customer</th>
             <th>Items</th>
             <th>Stage</th>
@@ -40,6 +41,7 @@ import Base from '../layouts/Base.astro';
         <thead>
           <tr>
             <th>Order</th>
+            <th>Ordered</th>
             <th>Customer</th>
             <th>Items</th>
             <th>Release</th>
@@ -96,6 +98,16 @@ import Base from '../layouts/Base.astro';
       return '<span class="stage stage-new">New</span>';
     }
 
+    // When the order was placed: date, with the time underneath in smaller text.
+    function formatOrdered(value) {
+      if (!value) return '<span class="release-none">—</span>';
+      const when = new Date(value);
+      if (isNaN(when)) return escape(value);
+      const date = when.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      const time = when.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      return `<span class="ordered-date">${escape(date)}</span><span class="ordered-time">${escape(time)}</span>`;
+    }
+
     // "2026-11-20" -> "20 Nov 2026". Left alone if it isn't a plain date.
     function formatRelease(value) {
       if (!value) return '<span class="release-none">—</span>';
@@ -123,6 +135,7 @@ import Base from '../layouts/Base.astro';
       return `
         <tr data-id="${escape(order.id)}"${working ? ' class="row-busy"' : ''}>
           <td class="cell-order">${escape(order.number)}</td>
+          <td class="cell-ordered">${formatOrdered(order.createdAt)}</td>
           <td>${escape(order.customer)}</td>
           <td><ul class="pickup-items">${items}</ul></td>
           ${releaseCell}
