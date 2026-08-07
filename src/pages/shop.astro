@@ -169,6 +169,13 @@ import Base from '../layouts/Base.astro';
         if (!data.ok) throw new Error(data.error || 'Could not load orders.');
         orders = data.orders;
         render();
+        if (data.truncated) {
+          setState(
+            `Showing the ${data.scanned} most recent unfulfilled orders — there are more than ` +
+              `that, so anything older is not listed here.`,
+            'warn'
+          );
+        }
         updatedEl.textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB', {
           hour: '2-digit',
           minute: '2-digit',

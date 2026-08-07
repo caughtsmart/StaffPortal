@@ -32,14 +32,13 @@ const PICKED_TAG = 'Picked';
 const READY_TAG = 'Ready for Collection';
 
 // How many unfulfilled orders to look through. 25 per request (kept modest
-// because each order now pulls product details too), so 12 pages covers the 300
-// most recent unfulfilled orders.
+// because each order also pulls product details), so 20 pages covers the 500
+// most recent unfulfilled orders. If that ceiling is ever reached, the board is
+// told, so it can say so rather than quietly leaving orders out.
 //
-// NOTE: Shopify only lets an app see the last 60 days of orders unless the shop
-// has been granted the `read_all_orders` scope. Pre-orders are often placed
-// months before release, so without that scope older pre-orders are invisible
-// to this board no matter how many pages we read. See README-PICKUPS.md.
-const MAX_PAGES = 12;
+// Seeing orders older than 60 days needs the `read_all_orders` scope on the
+// Shopify app. That has been granted for this store.
+const MAX_PAGES = 20;
 
 const ORDERS_QUERY = `
   query PickupOrders($cursor: String) {
@@ -156,12 +155,12 @@ async function getAccessToken(env) {
     throw new Error('Shopify did not return an access token.');
   }
 
-  cachedToken = {
-    key,
-    value: body.access_token,
-    // expires_in is in seconds, and is 24 hours in practice.
-    expiresAt: Date.now() + (body.expires_in ?? 86399) * 1000,
-  };
+  // Shopify's tokens last 24 hours, but we deliberately hold ours for at most
+  // an hour. If the app's permissions change (say `read_all_orders` is added),
+  // a token issued under the old permissions would otherwise keep being used
+  // for the rest of the day.
+  const lifetimeMs = Math.min((body.expires_in ?? 86399) * 1000, 60 * 60 * 1000);
+  cachedToken = { key, value: body.access_token, expiresAt: Date.now() + lifetimeMs };
   return cachedToken.value;
 }
 
@@ -223,33 +222,24 @@ function isPickup(order, title) {
 /**
  * Is this line a pre-order, and when is it due?
  *
- * Both live on the PRODUCT, and the store marks them two different ways:
- *  - a product tag `Preorder` (on every pre-order product we found), and
- *  - sometimes a `custom.preorder` boolean metafield (only on some of them).
- * Either counts, so a product tagged but not metafielded still lands correctly.
+ * PRE-ORDER STATUS comes from the product, marked two ways in this catalogue:
+ *  - the product tag `Preorder` — present on every pre-order product, and
+ *  - the `custom.preorder` boolean metafield — present on only some of them.
+ * Either counts, otherwise most pre-orders would be missed.
  *
- * The release date is a product tag in the form `Release 2026-11-20`. There is
- * no release-date metafield on these products today, so the tag is the real
- * source — but a `custom.release_date` metafield wins if one ever gets added.
+ * RELEASE DATE comes solely from the `custom.release_date` metafield (a Shopify
+ * date field). Note that products also carry a `Release 2026-11-20` tag holding
+ * the same information, but the metafield is the agreed source of truth, so a
+ * product with an empty metafield simply shows no date.
  */
-const RELEASE_TAG = /^release\s+(\d{4}-\d{2}-\d{2})$/i;
-
 function readProduct(product) {
   const tags = product?.tags ?? [];
   const taggedPreorder = tags.some((t) => t.trim().toLowerCase() === 'preorder');
   const flaggedPreorder = String(product?.preorderFlag?.value ?? '').toLowerCase() === 'true';
 
   let release = product?.releaseDate?.value || null;
-  if (!release) {
-    for (const tag of tags) {
-      const match = tag.trim().match(RELEASE_TAG);
-      if (match) {
-        release = match[1];
-        break;
-      }
-    }
-  }
-  // Trim a full timestamp down to just the date.
+  // A Shopify `date` field is already YYYY-MM-DD, but trim just in case it is
+  // ever changed to a date_time.
   if (release && release.length > 10) release = release.slice(0, 10);
 
   return { preorder: taggedPreorder || flaggedPreorder, release };
@@ -302,6 +292,7 @@ export async function onRequestGet({ env }) {
   try {
     const pickups = [];
     let cursor = null;
+    let truncated = false;
 
     for (let page = 0; page < MAX_PAGES; page++) {
       const data = await shopify(env, ORDERS_QUERY, { cursor });
@@ -313,10 +304,12 @@ export async function onRequestGet({ env }) {
 
       if (!orders.pageInfo.hasNextPage) break;
       cursor = orders.pageInfo.endCursor;
+      // Ran out of pages before running out of orders.
+      if (page === MAX_PAGES - 1) truncated = true;
     }
 
     // Newest first — the query already comes back that way.
-    return json({ ok: true, orders: pickups });
+    return json({ ok: true, orders: pickups, truncated, scanned: MAX_PAGES * 25 });
   } catch (error) {
     return json({ ok: false, error: error.message }, 500);
   }
