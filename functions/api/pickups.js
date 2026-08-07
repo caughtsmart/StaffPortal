@@ -51,7 +51,6 @@ const ORDERS_QUERY = `
         createdAt
         tags
         email
-        customer { displayName }
         shippingAddress { name }
         shippingLine { title }
         fulfillmentOrders(first: 10) { nodes { id status } }
@@ -169,7 +168,10 @@ async function shopify(env, query, variables = {}) {
 
   const body = await response.json();
   if (body.errors?.length) {
-    throw new Error(body.errors.map((e) => e.message).join('; '));
+    // Shopify repeats the same complaint once per order, which made for a wall
+    // of identical text. Say it once.
+    const seen = [...new Set(body.errors.map((e) => e.message))];
+    throw new Error(seen.join('; '));
   }
   return body.data;
 }
@@ -207,7 +209,11 @@ function toCard(order) {
     id: order.id,
     number: order.name,
     createdAt: order.createdAt,
-    customer: order.customer?.displayName || order.shippingAddress?.name || 'Guest',
+    // The name on the order, not the account holder's — for a pickup that's the
+    // person who'll walk in to collect it, which is who the counter needs.
+    // Deliberately avoids the `customer` field, which needs the extra
+    // read_customers permission the app doesn't have (and doesn't need).
+    customer: order.shippingAddress?.name || order.email || 'Guest',
     email: order.email || null,
     items: (order.lineItems?.nodes ?? []).map((li) => ({
       name: li.name,
