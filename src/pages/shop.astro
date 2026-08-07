@@ -191,8 +191,8 @@ import Base from '../layouts/Base.astro';
           );
         } else if (data.truncated) {
           setState(
-            `Showing the ${data.scanned} most recent unfulfilled orders — there are more than ` +
-              `that, so anything older is not listed here.`,
+            `Unusually large backlog: stopped after checking ${data.scanned} unfulfilled orders, ` +
+              `so any pickup older than that is not shown. Worth telling Graham.`,
             'warn'
           );
         }

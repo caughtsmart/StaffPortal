@@ -138,8 +138,7 @@ months before release.
 history. If it's ever re-created, request it again from the Dev Dashboard under
 the app's **API access** → **Read all orders** → **Request access**.
 
-The board reads the 500 most recent unfulfilled orders. If there are ever more
-than that, it says so on the page rather than quietly leaving them out.
+The board reads **every** unfulfilled order, however far back it goes.
 
 ---
 
@@ -154,8 +153,25 @@ only reliable signal, which is why `PICKUP_SHIPPING_TITLE` exists. **If someone
 renames that rate in Shipx, the board will go empty** — that's the first thing to
 check if it ever does.
 
-The board looks through the 500 most recent unfulfilled orders, refreshes itself
-every minute, and lists newest first.
+The board refreshes itself every minute and lists newest first.
+
+**How it finds them, and why it works this way.** Shopify has no way to search
+orders by shipping method — putting `shipping_line:` in a search query is
+silently ignored, and you get every order back regardless. So every unfulfilled
+order has to be looked at.
+
+This shop currently has around **1,800 unfulfilled orders**, mostly old
+`PRE/BACK ORDER` and similar, so that is not a small job. It is done in two
+passes:
+
+1. **Skim** — ask only for each order's id and shipping method. That is cheap
+   enough to fetch 250 at a time, so ~1,800 orders takes about 8 requests.
+2. **Detail** — fetch the full information for the pickups only, 25 at a time.
+
+Roughly ten requests a refresh, and nothing is left out. Doing it in one pass
+would mean 25 orders per request — over 70 requests every minute — because
+asking for line items and product data at 250 an page exceeds Shopify's limit on
+how much one query may ask for.
 
 ### Standard Orders vs Pre-Orders
 

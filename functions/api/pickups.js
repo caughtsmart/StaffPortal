@@ -31,37 +31,50 @@ const API_VERSION = '2025-07';
 const PICKED_TAG = 'Picked';
 const READY_TAG = 'Ready for Collection';
 
-// How many unfulfilled orders to look through. 25 per request (kept modest
-// because each order also pulls product details), so 20 pages covers the 500
-// most recent unfulfilled orders. If that ceiling is ever reached, the board is
-// told, so it can say so rather than quietly leaving orders out.
+// Finding the pickups happens in two passes, because Shopify has no way to
+// filter orders by shipping method — `shipping_line:` in a search query is
+// silently ignored, so every unfulfilled order has to be looked at.
 //
-// Seeing orders older than 60 days needs the `read_all_orders` scope on the
-// Shopify app. That has been granted for this store.
-const MAX_PAGES = 20;
+// Pass 1 asks only for the id and shipping method, which is cheap enough to
+// fetch 250 orders at a time. Pass 2 then pulls the full details for just the
+// pickups. Fetching everything in one go would blow Shopify's query cost limit
+// at anything above about 25 orders a page, which is why this is split.
+const SCAN_PAGE_SIZE = 250;
+const DETAIL_BATCH_SIZE = 25;
 
-const PRODUCT_BLOCK = `
-            product {
-              id
-              tags
-              preorderFlag: metafield(namespace: "custom", key: "preorder") { value }
-              releaseDate: metafield(namespace: "custom", key: "release_date") { value }
-            }`;
+// A runaway guard, not a real limit: 40 x 250 is 10,000 unfulfilled orders.
+const MAX_SCAN_PAGES = 40;
 
-// Reading the product needs the `read_products` scope. If that is ever missing,
-// we re-run this same query without the product block so the board still works —
-// just without the pre-order split. Better a usable board than a blank one.
-const ordersQuery = (withProduct) => `
-  query PickupOrders($cursor: String) {
+const SCAN_QUERY = `
+  query ScanForPickups($cursor: String) {
     orders(
-      first: 25
+      first: ${SCAN_PAGE_SIZE}
       after: $cursor
       query: "fulfillment_status:unfulfilled AND status:open"
       sortKey: CREATED_AT
       reverse: true
     ) {
       pageInfo { hasNextPage endCursor }
-      nodes {
+      nodes { id shippingLine { title } }
+    }
+  }
+`;
+
+const PRODUCT_BLOCK = `
+          product {
+            id
+            tags
+            preorderFlag: metafield(namespace: "custom", key: "preorder") { value }
+            releaseDate: metafield(namespace: "custom", key: "release_date") { value }
+          }`;
+
+// Reading the product needs the `read_products` scope. If that is ever missing,
+// we re-run without the product block so the board still works — just without
+// the pre-order split. Better a usable board than a blank one.
+const detailQuery = (withProduct) => `
+  query PickupDetails($ids: [ID!]!) {
+    nodes(ids: $ids) {
+      ... on Order {
         id
         name
         createdAt
@@ -70,7 +83,7 @@ const ordersQuery = (withProduct) => `
         shippingAddress { name }
         shippingLine { title }
         fulfillmentOrders(first: 10) { nodes { id status } }
-        lineItems(first: 25) {
+        lineItems(first: 50) {
           nodes {
             name
             quantity
@@ -299,39 +312,52 @@ export async function onRequestGet({ env }) {
   const title = env.PICKUP_SHIPPING_TITLE || 'In Store Pickup';
 
   try {
-    const pickups = [];
+    // Pass 1 — skim every unfulfilled order, keeping only the pickups.
+    const pickupIds = [];
     let cursor = null;
+    let scanned = 0;
     let truncated = false;
+
+    for (let page = 0; page < MAX_SCAN_PAGES; page++) {
+      const data = await shopify(env, SCAN_QUERY, { cursor });
+      const orders = data.orders;
+      scanned += orders.nodes.length;
+
+      for (const order of orders.nodes) {
+        if (isPickup(order, title)) pickupIds.push(order.id);
+      }
+
+      if (!orders.pageInfo.hasNextPage) break;
+      cursor = orders.pageInfo.endCursor;
+      if (page === MAX_SCAN_PAGES - 1) truncated = true;
+    }
+
+    // Pass 2 — full details, but only for the pickups.
+    const pickups = [];
     let productAccess = true;
 
-    for (let page = 0; page < MAX_PAGES; page++) {
+    for (let i = 0; i < pickupIds.length; i += DETAIL_BATCH_SIZE) {
+      const ids = pickupIds.slice(i, i + DETAIL_BATCH_SIZE);
       let data;
       try {
-        data = await shopify(env, ordersQuery(productAccess), { cursor });
+        data = await shopify(env, detailQuery(productAccess), { ids });
       } catch (error) {
         // No permission to read products: carry on without the pre-order split
         // rather than showing staff an empty board.
         if (productAccess && isProductAccessError(error.message)) {
           productAccess = false;
-          data = await shopify(env, ordersQuery(false), { cursor });
+          data = await shopify(env, detailQuery(false), { ids });
         } else {
           throw error;
         }
       }
-      const orders = data.orders;
-
-      for (const order of orders.nodes) {
-        if (isPickup(order, title)) pickups.push(toCard(order));
+      for (const order of data.nodes) {
+        if (order) pickups.push(toCard(order));
       }
-
-      if (!orders.pageInfo.hasNextPage) break;
-      cursor = orders.pageInfo.endCursor;
-      // Ran out of pages before running out of orders.
-      if (page === MAX_PAGES - 1) truncated = true;
     }
 
-    // Newest first — the query already comes back that way.
-    return json({ ok: true, orders: pickups, truncated, productAccess, scanned: MAX_PAGES * 25 });
+    // Newest first — pass 1 walked the orders in that order already.
+    return json({ ok: true, orders: pickups, truncated, productAccess, scanned });
   } catch (error) {
     return json({ ok: false, error: error.message }, 500);
   }
