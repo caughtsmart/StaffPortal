@@ -112,21 +112,82 @@ a { color: var(--ld-accent-dark); }
   background: var(--ld-panel);
   border-right: 1px solid var(--ld-line);
 }
-.sidebar h2 {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: var(--ld-muted);
-  margin: 18px 8px 6px;
-}
 .sidebar ul { list-style: none; margin: 0 0 6px; padding: 0; }
 .sidebar li a {
   display: block;
-  padding: 7px 10px;
+  padding: 7px 10px 7px 22px;
   border-radius: 8px;
   color: var(--ld-ink);
   text-decoration: none;
   font-size: 14.5px;
+}
+
+/* ---------- Sidebar menu: Home link + accordions ---------- */
+.nav-home {
+  display: block;
+  padding: 9px 10px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  color: var(--ld-ink);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14.5px;
+}
+.nav-home:hover { background: #f0efec; }
+.nav-home[aria-current="page"] { background: var(--ld-accent); color: var(--ld-ink); }
+
+/* Both levels of accordion: a clickable heading with a chevron. */
+.nav-group > summary,
+.nav-section > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  list-style: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.nav-group > summary::-webkit-details-marker,
+.nav-section > summary::-webkit-details-marker { display: none; }
+.nav-group > summary::before,
+.nav-section > summary::before {
+  content: '';
+  flex: none;
+  width: 0;
+  height: 0;
+  border-left: 5px solid currentColor;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform .15s;
+}
+.nav-group[open] > summary::before,
+.nav-section[open] > summary::before { transform: rotate(90deg); }
+
+/* Top level: Home / Policies / Shop */
+.nav-group > summary {
+  padding: 9px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14.5px;
+  color: var(--ld-ink);
+}
+.nav-group > summary:hover { background: #f0efec; }
+
+/* Second level: the section headings inside a group */
+.nav-section > summary {
+  padding: 7px 10px 7px 18px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ld-muted);
+}
+.nav-section > summary:hover { color: var(--ld-ink); }
+
+.nav-empty {
+  margin: 2px 10px 8px 22px;
+  font-size: 13px;
+  color: var(--ld-muted);
 }
 .sidebar li a:hover { background: #f0efec; }
 .sidebar li a[aria-current="page"] {

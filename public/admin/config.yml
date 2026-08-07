@@ -34,11 +34,20 @@ collections:
         label: "Section (menu group)"
         widget: select
         options:
+          - "Opening & Closing"
+          - "Till & Payments"
+          - "Customer Service"
+          - "Events & In-Store Gaming"
+          - "Goods In & Deliveries"
+          - "Stock & Suppliers"
+          - "Picking & Packing"
           - "Start Here"
           - "HR & People"
           - "Health & Safety"
           - "Data & IT"
           - "Security & Conduct"
+          - "Shopify & Online Orders"
+          - "Marketing"
       - { name: order, label: "Order in section (1 = top)", widget: number, default: 1, value_type: int }
       - { name: summary, label: "One-line summary", widget: string, required: false }
       - { name: updated, label: "Last updated", widget: datetime, date_format: "YYYY-MM-DD", time_format: false, format: "YYYY-MM-DD" }

@@ -1,6 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
-import { SECTION_ORDER } from '../sections';
+import { NAV_GROUPS } from '../sections';
 
 const { currentSlug } = Astro.props;
 
@@ -17,16 +17,48 @@ for (const p of pages) {
 for (const list of bySection.values()) {
   list.sort((a, b) => (a.data.order - b.data.order) || a.data.title.localeCompare(b.data.title));
 }
-// Show sections in the defined order; anything not listed goes last.
-const orderedSections = [
-  ...SECTION_ORDER.filter((s) => bySection.has(s)),
-  ...[...bySection.keys()].filter((s) => !SECTION_ORDER.includes(s)),
-];
+
+const holdsCurrentPage = (section: string) =>
+  (bySection.get(section) ?? []).some((p) => p.slug === currentSlug);
+
+// Build the groups, keeping only sections that actually have pages.
+const groups = NAV_GROUPS.map((group) => {
+  const sections = group.sections.filter((s) => bySection.has(s));
+  return { ...group, sections, hasCurrentPage: sections.some(holdsCurrentPage) };
+});
+
+// Any section not listed in a group still gets shown, at the end.
+const grouped = new Set(NAV_GROUPS.flatMap((g) => g.sections));
+const ungrouped = [...bySection.keys()].filter((s) => !grouped.has(s));
 ---
-<nav class="sidebar" id="sidebar" aria-label="Handbook sections">
-  {orderedSections.map((section) => (
-    <div>
-      <h2>{section}</h2>
+<nav class="sidebar" id="sidebar" aria-label="Handbook menu">
+  <a class="nav-home" href="/" aria-current={currentSlug === undefined ? 'page' : undefined}>Home</a>
+
+  {groups.map((group) => (
+    <details class="nav-group" open={group.hasCurrentPage || group.openByDefault}>
+      <summary>{group.label}</summary>
+      {group.sections.length === 0 && <p class="nav-empty">Nothing here yet.</p>}
+      {group.sections.map((section) => (
+        <details class="nav-section" open={holdsCurrentPage(section)}>
+          <summary>{section}</summary>
+          <ul>
+            {bySection.get(section).map((p) => (
+              <li>
+                <a
+                  href={`/${p.slug}/`}
+                  aria-current={currentSlug === p.slug ? 'page' : undefined}
+                >{p.data.title}</a>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ))}
+    </details>
+  ))}
+
+  {ungrouped.map((section) => (
+    <details class="nav-group" open={holdsCurrentPage(section)}>
+      <summary>{section}</summary>
       <ul>
         {bySection.get(section).map((p) => (
           <li>
@@ -37,6 +69,6 @@ const orderedSections = [
           </li>
         ))}
       </ul>
-    </div>
+    </details>
   ))}
 </nav>
