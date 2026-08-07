@@ -1,5 +1,5 @@
 # ============================================================
-#  Staff Handbook — Editor settings
+#  Loaded Dice Handbook — Editor settings
 #  Change ONLY the two lines marked <-- CHANGE if you rename
 #  the GitHub repo. Everything else can stay as-is.
 # ============================================================
@@ -35,17 +35,10 @@ collections:
         widget: select
         options:
           - "Start Here"
-          - "Opening & Closing"
-          - "Till & Payments"
-          - "Shopify & Online Orders"
-          - "Stock & Suppliers"
-          - "Events & In-Store Gaming"
-          - "Customer Service"
           - "HR & People"
           - "Health & Safety"
           - "Data & IT"
           - "Security & Conduct"
-          - "Marketing"
       - { name: order, label: "Order in section (1 = top)", widget: number, default: 1, value_type: int }
       - { name: summary, label: "One-line summary", widget: string, required: false }
       - { name: updated, label: "Last updated", widget: datetime, date_format: "YYYY-MM-DD", time_format: false, format: "YYYY-MM-DD" }

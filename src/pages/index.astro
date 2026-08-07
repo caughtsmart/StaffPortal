@@ -18,11 +18,11 @@ const totalPages = pages.length;
 ---
 <Base title="Home">
   <div class="hero">
-    <h1>Staff Handbook</h1>
-    <p>Everything you need to run the shop — procedures, policies and how-tos, all in one place. Use the search box (top right) or the menu on the left to find what you need.</p>
+    <h1>Loaded Dice Staff Handbook</h1>
+    <p>The company policies and procedures for everyone at Loaded Dice. Use the search box (top right) or the menu on the left to find what you need.</p>
   </div>
 
-  <p style="color:var(--ld-muted); margin-top:-8px;">{totalPages} procedures across {orderedSections.length} sections.</p>
+  <p style="color:var(--ld-muted); margin-top:-8px;">{totalPages} pages across {orderedSections.length} sections.</p>
 
   {orderedSections.map((section) => (
     <section style="margin-bottom:26px;">
