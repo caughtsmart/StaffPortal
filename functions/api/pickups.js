@@ -84,15 +84,30 @@ const FULFILL = `
 // isn't doing that dance on every refresh.
 let cachedToken = null; // { key, value, expiresAt } — key ties it to the credentials used
 
+/**
+ * Report every setting that's missing in one go, so it takes one trip to the
+ * Cloudflare dashboard rather than one per variable.
+ */
+function checkSettings(env) {
+  const missing = [];
+  if (!env.SHOPIFY_STORE) missing.push('SHOPIFY_STORE');
+  if (!env.SHOPIFY_ADMIN_TOKEN) {
+    if (!env.SHOPIFY_CLIENT_ID) missing.push('SHOPIFY_CLIENT_ID');
+    if (!env.SHOPIFY_CLIENT_SECRET) missing.push('SHOPIFY_CLIENT_SECRET');
+  }
+  if (missing.length === 0) return;
+
+  throw new Error(
+    `Shopify is not set up yet — Cloudflare isn't passing through: ${missing.join(', ')}. ` +
+      `Add them under Settings > Variables and Secrets (Production), then make a new ` +
+      `deployment — existing deployments keep the settings they were built with. ` +
+      `Names are case-sensitive.`
+  );
+}
+
 async function getAccessToken(env) {
   // An older-style permanent token, if you have one, wins and needs no swapping.
   if (env.SHOPIFY_ADMIN_TOKEN) return env.SHOPIFY_ADMIN_TOKEN;
-
-  if (!env.SHOPIFY_CLIENT_ID || !env.SHOPIFY_CLIENT_SECRET) {
-    throw new Error(
-      'Shopify is not set up yet: add SHOPIFY_CLIENT_ID and SHOPIFY_CLIENT_SECRET in Cloudflare.'
-    );
-  }
 
   // Re-use the token until it has a minute left on it. The key means that if
   // the store or the app's ID ever changes, we fetch a fresh one rather than
@@ -135,10 +150,8 @@ async function getAccessToken(env) {
 
 /** Call the Shopify Admin API and hand back the `data` block. */
 async function shopify(env, query, variables = {}) {
+  checkSettings(env);
   const store = env.SHOPIFY_STORE;
-  if (!store) {
-    throw new Error('Shopify is not set up yet: SHOPIFY_STORE is missing.');
-  }
   const token = await getAccessToken(env);
 
   const response = await fetch(`https://${store}/admin/api/${API_VERSION}/graphql.json`, {
