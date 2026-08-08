@@ -58,6 +58,24 @@ var REPLY_TO = 'customerservice@loadeddice.uk';
 
 // -------------------------------------------------------------------------
 
+/**
+ * Opening the web app address in a browser lands here. It exists so you can
+ * check the deployment is live and reachable without sending an email:
+ * paste the /exec URL into a browser and you should see {"ok":true,...}.
+ *
+ * If you get a Google sign-in page instead, the deployment's "Who has access"
+ * is not set to Anyone — which is also why the portal cannot reach it.
+ */
+function doGet() {
+  return reply({
+    ok: true,
+    service: 'Loaded Dice — ready for collection email',
+    sendFrom: SEND_FROM,
+    canSendAsSendFrom: GmailApp.getAliases().indexOf(SEND_FROM) !== -1,
+    replyTo: REPLY_TO
+  });
+}
+
 function doPost(e) {
   try {
     var body = JSON.parse(e.postData.contents);
