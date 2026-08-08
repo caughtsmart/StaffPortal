@@ -30,6 +30,14 @@ var SHARED_SECRET = 'change-me-to-something-long-and-random';
 var SHOP_NAME = 'Loaded Dice';
 var SHOP_ADDRESS = '28 Holton Road, Barry, Vale of Glamorgan, CF63 4HD';
 var SHOP_PHONE = '01446 789 088';
+
+// When customers can come and collect. Closed Monday is spelled out on purpose —
+// "Tuesday to Saturday" alone leaves people to work that out for themselves.
+var SHOP_HOURS = [
+  'Tuesday to Saturday: 10.30am - 4.30pm',
+  'Sunday: 11am - 3pm',
+  'Closed Mondays'
+];
 var REPLY_TO = 'info@loadeddice.uk';
 
 // -------------------------------------------------------------------------
@@ -87,6 +95,9 @@ function plainTextEmail(firstName, orderNumber, items) {
     SHOP_ADDRESS,
     'Phone: ' + SHOP_PHONE,
     '',
+    'Opening hours:',
+    SHOP_HOURS.join('\n'),
+    '',
     'Just give your order number at the counter and we will grab it for you.',
     '',
     'See you soon,',
@@ -114,6 +125,9 @@ function htmlEmail(firstName, orderNumber, items) {
         '<p style="margin:0 0 6px;"><strong>Where to find us</strong></p>' +
         '<p style="margin:0 0 18px;color:#555555;">' + escapeHtml(SHOP_ADDRESS) + '<br>' +
           'Phone: ' + escapeHtml(SHOP_PHONE) + '</p>' +
+        '<p style="margin:0 0 6px;"><strong>Opening hours</strong></p>' +
+        '<p style="margin:0 0 18px;color:#555555;">' +
+          SHOP_HOURS.map(escapeHtml).join('<br>') + '</p>' +
         '<p style="margin:0 0 18px;">Just give your order number at the counter and we will grab it for you.</p>' +
         '<p style="margin:0;color:#555555;">See you soon,<br>The ' + escapeHtml(SHOP_NAME) + ' team</p>' +
       '</div>' +

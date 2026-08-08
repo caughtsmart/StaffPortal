@@ -88,6 +88,12 @@ the Apps Script:
 2. In short: paste it into a new project at **script.google.com**, change
    `SHARED_SECRET` to a long random phrase, then **Deploy → New deployment → Web
    app**, with *Execute as: Me* and *Who has access: Anyone*.
+   - Google will warn *"Google hasn't verified this app"* the first time. That's
+     normal for your own script: **Advanced** → **Go to (project) (unsafe)** →
+     **Allow**.
+   - The shop address, phone and opening hours are constants at the top of the
+     file. Change them there, then **Deploy → Manage deployments → edit → Deploy**
+     to push the new version.
 3. Copy the web app address, and add two more variables in Cloudflare:
 
 | Name | Value | Type |
