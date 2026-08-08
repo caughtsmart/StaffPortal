@@ -391,7 +391,12 @@ export async function onRequestPost({ request, env }) {
       // Tell the customer. If the email step fails we still report success for
       // the tag, but say so plainly, so staff know to ring them instead.
       const emailed = await sendReadyEmail(env, body);
-      return json({ ok: true, emailed: emailed.sent, emailError: emailed.error });
+      return json({
+        ok: true,
+        emailed: emailed.sent,
+        emailError: emailed.error,
+        emailWarning: emailed.warning ?? null,
+      });
     }
 
     // action === 'collected' — fulfil in Shopify, which drops it off the board.
@@ -451,13 +456,16 @@ async function sendReadyEmail(env, body) {
     try {
       const result = JSON.parse(text);
       if (result.ok === false) return { sent: false, error: result.error || 'Email service refused.' };
+      // Sent, but something worth knowing — e.g. it couldn't use the
+      // noreply@ address and fell back to the account's own.
+      if (result.warning) return { sent: true, error: null, warning: result.warning };
     } catch {
       // Not JSON — Apps Script sometimes returns an HTML page when the web app
       // is deployed with the wrong access setting.
       return { sent: false, error: 'Email service did not reply properly. Check its deployment access is "Anyone".' };
     }
 
-    return { sent: true, error: null };
+    return { sent: true, error: null, warning: null };
   } catch (error) {
     return { sent: false, error: error.message };
   }

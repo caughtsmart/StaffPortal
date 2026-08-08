@@ -7,7 +7,10 @@
  * HOW TO SET IT UP
  *  1. Go to script.google.com and choose New project.
  *  2. Delete whatever is in the editor and paste this whole file in.
- *  3. Change the three settings just below to suit.
+ *  3. Change the settings just below to suit.
+ *  3a. To send as noreply@loadeddice.uk, that address must first be added under
+ *      Gmail > See all settings > Accounts > "Send mail as" and verified. Run
+ *      the checkAliases() function here to confirm before deploying.
  *  4. Click Deploy > New deployment > type: Web app.
  *       Execute as:    Me
  *       Who has access: Anyone
@@ -38,6 +41,19 @@ var SHOP_HOURS = [
   'Sunday: 11am - 3pm',
   'Closed Mondays'
 ];
+// Who the email appears to come from.
+//
+// Google will only let you send as an address your account is allowed to send
+// as. Before this works, noreply@loadeddice.uk must be added under
+// Gmail > See all settings > Accounts > "Send mail as" (and verified). Run the
+// checkAliases() function below to see what your account can currently use.
+//
+// If it isn't available, the email still goes out — just from your own address
+// — and the portal shows a warning so it doesn't slip by unnoticed.
+var SEND_FROM = 'noreply@loadeddice.uk';
+
+// Where replies go. Deliberately NOT the noreply address: a customer replying
+// about their order should reach someone.
 var REPLY_TO = 'info@loadeddice.uk';
 
 // -------------------------------------------------------------------------
@@ -57,19 +73,48 @@ function doPost(e) {
     var orderNumber = body.orderNumber || '';
     var items = body.items || [];
 
-    MailApp.sendEmail({
-      to: body.email,
+    var options = {
       replyTo: REPLY_TO,
       name: SHOP_NAME,
-      subject: 'Your ' + SHOP_NAME + ' order ' + orderNumber + ' is ready to collect',
-      body: plainTextEmail(firstName, orderNumber, items),
       htmlBody: htmlEmail(firstName, orderNumber, items)
-    });
+    };
 
-    return reply({ ok: true });
+    // Only ask to send as SEND_FROM if the account is actually allowed to.
+    // Passing an address Google hasn't verified makes it fall back silently.
+    var warning = null;
+    if (SEND_FROM) {
+      if (GmailApp.getAliases().indexOf(SEND_FROM) !== -1) {
+        options.from = SEND_FROM;
+      } else {
+        warning = 'Sent from the account address, not ' + SEND_FROM +
+          ' — that address is not set up under Gmail > Settings > Accounts > Send mail as.';
+      }
+    }
+
+    GmailApp.sendEmail(
+      body.email,
+      'Your ' + SHOP_NAME + ' order ' + orderNumber + ' is ready to collect',
+      plainTextEmail(firstName, orderNumber, items),
+      options
+    );
+
+    return reply(warning ? { ok: true, warning: warning } : { ok: true });
   } catch (error) {
     return reply({ ok: false, error: String(error) });
   }
+}
+
+/**
+ * Run this from the editor (pick checkAliases, press Run) to see which
+ * addresses this account may send as. The result appears in the Execution log.
+ */
+function checkAliases() {
+  var aliases = GmailApp.getAliases();
+  Logger.log('This account can send as: ' + (aliases.length ? aliases.join(', ') : '(no aliases)'));
+  Logger.log('SEND_FROM is set to: ' + SEND_FROM);
+  Logger.log(aliases.indexOf(SEND_FROM) !== -1
+    ? 'OK — emails will come from ' + SEND_FROM
+    : 'NOT SET UP — add ' + SEND_FROM + ' under Gmail > Settings > Accounts > Send mail as.');
 }
 
 function reply(payload) {

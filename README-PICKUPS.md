@@ -94,14 +94,26 @@ the Apps Script:
    - The shop address, phone and opening hours are constants at the top of the
      file. Change them there, then **Deploy → Manage deployments → edit → Deploy**
      to push the new version.
-3. Copy the web app address, and add two more variables in Cloudflare:
+3. **Sending as `noreply@loadeddice.uk`.** Google only lets a script send from an
+   address the account is verified to send as. So before this works:
+   - In Gmail (as the account that owns the script): **See all settings** →
+     **Accounts** → **Send mail as** → **Add another email address** →
+     `noreply@loadeddice.uk` → complete the verification.
+   - Back in the script editor, choose **checkAliases** from the function
+     dropdown and press **Run**. The Execution log tells you whether it's set up.
+
+   If it isn't, the email still goes out — from the account's own address — and
+   the board shows a warning saying so, rather than quietly using the wrong
+   sender. Replies go to `info@loadeddice.uk` either way, so a customer replying
+   about their order still reaches someone.
+4. Copy the web app address, and add two more variables in Cloudflare:
 
 | Name | Value | Type |
 |------|-------|------|
 | `READY_EMAIL_URL` | the Apps Script web app address | Plaintext |
 | `READY_EMAIL_SECRET` | the same phrase as `SHARED_SECRET` | **Secret** |
 
-4. Retry the deployment again.
+5. Retry the deployment again.
 
 If this step isn't done, pressing Ready still works — the board just tells staff
 the email didn't go and to ring the customer instead.

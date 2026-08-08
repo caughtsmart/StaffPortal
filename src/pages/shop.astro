@@ -235,7 +235,9 @@ import Base from '../layouts/Base.astro';
         const data = await response.json();
         if (!data.ok) throw new Error(data.error || 'That did not work.');
 
-        if (action === 'ready' && data.emailed === false) {
+        if (action === 'ready' && data.emailWarning) {
+          setState(`${order.number}: ${data.emailWarning}`, 'warn');
+        } else if (action === 'ready' && data.emailed === false) {
           setState(
             `${order.number} is marked ready, but the email did not send: ${data.emailError}. ` +
               `Give the customer a ring.`,
