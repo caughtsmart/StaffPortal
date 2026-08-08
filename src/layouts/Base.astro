@@ -12,6 +12,13 @@ const { title, currentSlug, wide } = Astro.props;
 const LOGO =
   'https://cdn.shopify.com/s/files/1/0306/5842/9059/files/loaded-dice-logo-white.png?v=1785936604';
 const pageTitle = title ? `${title} · Loaded Dice Staff Handbook` : 'Loaded Dice Staff Handbook';
+
+// Which version of the code this page was built from. Cloudflare sets these
+// while it builds; locally they're empty and it just says "local". It's printed
+// small in the footer so you can always tell whether a change has actually gone
+// live, rather than guessing from the Deployments list.
+const buildCommit = (process.env.CF_PAGES_COMMIT_SHA || '').slice(0, 7) || 'local';
+const buildBranch = process.env.CF_PAGES_BRANCH || '';
 ---
 <!doctype html>
 <html lang="en-GB">
@@ -49,6 +56,7 @@ const pageTitle = title ? `${title} · Loaded Dice Staff Handbook` : 'Loaded Dic
 
     <footer class="site-footer">
       Loaded Dice — internal staff handbook. Confidential. Do not share outside the team.
+      <span class="build-stamp">build {buildCommit}{buildBranch ? ` · ${buildBranch}` : ''}</span>
     </footer>
 
     <script is:inline>

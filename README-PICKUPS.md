@@ -82,6 +82,23 @@ Then **Deployments** → **⋯** → **Retry deployment** so it picks them up. V
 *(Optional: add `PICKUP_SHIPPING_TITLE` if the shipping method is ever renamed.
 It defaults to `In Store Pickup`, which is what your Shipx rate is called today.)*
 
+### Checking it actually took
+
+Two things are easy to get wrong here, and both look identical from the outside:
+code that hasn't deployed, and a setting that was added *after* the last build.
+So there are two ways to check without reading the Cloudflare dashboard.
+
+**Which code is live.** Every page now prints a short code in the bottom-right
+of the footer, e.g. `build 5c1192a · main`. That is the exact commit the running
+site was built from. Compare it with the newest commit on GitHub — if they don't
+match, your change hasn't deployed yet, whatever the Deployments list says.
+
+**Which settings are live.** Visit **ldhq.uk/api/health**. It lists every
+setting and whether the running site can see it — never the secret values
+themselves, just yes/no. It also checks the ready-email address is the right
+*kind* of address, which catches the two easy mistakes (pasting the `/dev`
+address, or the editor URL, instead of the `/exec` one).
+
 ---
 
 ## Step 3 — The "Ready" email

@@ -380,6 +380,9 @@ a { color: var(--ld-accent-dark); }
   padding: 18px 28px; color: var(--ld-muted); font-size: 13px;
   border-top: 1px solid var(--ld-line); background: var(--ld-panel);
 }
+/* Which commit this page was built from — see Base.astro. */
+.build-stamp { float: right; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; opacity: 0.6; }
+@media (max-width: 860px) { .build-stamp { float: none; display: block; margin-top: 6px; } }
 
 /* ---------- Mobile ---------- */
 .menu-toggle { display: none; background: none; border: 0; color: #fff; font-size: 22px; cursor: pointer; }
