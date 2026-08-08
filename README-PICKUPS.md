@@ -168,6 +168,27 @@ The stages are stored as **order tags in Shopify**, not in this website. That
 means the board and Shopify can never disagree, everyone sees the same thing
 instantly, and you can look at any order in Shopify and see where it got to.
 
+**The Stage column shows when each step happened**, e.g. *Picked ✓ 8 Aug, 14:30*
+and under it *Ready ✓ 8 Aug, 15:02*. Hovering the Picked or Ready button shows the
+full date and time.
+
+The time is recorded as a second tag next to the stage tag — `picked-at-2026-08-08-1430Z`
+— because Shopify keeps no record of when a tag was added, and storing it properly
+(an order metafield) would have meant asking for yet another permission. A side
+benefit is that the time is legible on the order in Shopify admin too. Times are
+stored in UTC (that's the `Z`) and displayed in local time, so British Summer Time
+can't make them ambiguous.
+
+Orders that were tagged **before** this was added have no time recorded, so they
+show the stage without a time. That's expected and sorts itself out as new orders
+come through.
+
+**While a button is working** it spins and says what it's doing — *Marking…*,
+*Emailing…*, *Fulfilling…* — the row is highlighted, and the row's other buttons
+lock until it finishes. The result then appears immediately rather than waiting
+for the board to re-read every order from Shopify, which is what used to make a
+press feel like nothing had happened.
+
 **Collected asks "are you sure" first**, because it can't be undone from here —
 the order becomes fulfilled and leaves the list. (You can still un-fulfil it in
 Shopify admin if someone mis-clicks.)
