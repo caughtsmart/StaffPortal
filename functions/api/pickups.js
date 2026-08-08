@@ -430,7 +430,28 @@ export async function onRequestPost({ request, env }) {
  */
 async function sendReadyEmail(env, body) {
   if (!env.READY_EMAIL_URL) {
-    return { sent: false, error: 'No email address set up yet (READY_EMAIL_URL).' };
+    return {
+      sent: false,
+      error:
+        'READY_EMAIL_URL is not set in Cloudflare (Settings > Variables and Secrets, ' +
+        'Production) — or it was added without making a new deployment afterwards.',
+    };
+  }
+  // The two ways this URL is usually wrong, both of which look fine at a glance.
+  if (!/^https:\/\/script\.google\.com\//.test(env.READY_EMAIL_URL)) {
+    return {
+      sent: false,
+      error: `READY_EMAIL_URL does not look like an Apps Script address — it should start ` +
+        `https://script.google.com/ and currently starts "${env.READY_EMAIL_URL.slice(0, 40)}".`,
+    };
+  }
+  if (!env.READY_EMAIL_URL.endsWith('/exec')) {
+    return {
+      sent: false,
+      error:
+        'READY_EMAIL_URL must end in /exec — that is the deployed web app. A /dev address ' +
+        'is the test one and requires a Google login, so the server cannot use it.',
+    };
   }
   if (!body.email) {
     return { sent: false, error: 'That order has no email address on it.' };
@@ -450,7 +471,12 @@ async function sendReadyEmail(env, body) {
     });
 
     const text = await response.text();
-    if (!response.ok) return { sent: false, error: `Email service replied ${response.status}.` };
+    if (!response.ok) {
+      return {
+        sent: false,
+        error: `Apps Script replied ${response.status}. ${text.slice(0, 120)}`,
+      };
+    }
 
     // Apps Script answers with JSON when it is happy.
     try {
@@ -460,9 +486,12 @@ async function sendReadyEmail(env, body) {
       // noreply@ address and fell back to the account's own.
       if (result.warning) return { sent: true, error: null, warning: result.warning };
     } catch {
-      // Not JSON — Apps Script sometimes returns an HTML page when the web app
-      // is deployed with the wrong access setting.
-      return { sent: false, error: 'Email service did not reply properly. Check its deployment access is "Anyone".' };
+      // Not JSON — almost always a Google sign-in page, which means the web app
+      // was deployed with the wrong "Who has access" setting.
+      const clue = /accounts\.google\.com|sign in|Moved Temporarily/i.test(text)
+        ? 'It returned a Google sign-in page, so the deployment\'s "Who has access" is not set to Anyone.'
+        : `It returned: ${text.slice(0, 120)}`;
+      return { sent: false, error: `Apps Script did not reply with JSON. ${clue}` };
     }
 
     return { sent: true, error: null, warning: null };
