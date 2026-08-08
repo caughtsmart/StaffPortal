@@ -73,6 +73,12 @@ Make sure you're adding them to **Production**, not Preview.
 Then **Deployments** → **⋯** → **Retry deployment** so it picks them up. Visit
 **ldhq.uk/shop** and your pickups should appear.
 
+> **Careful with Retry deployment.** It rebuilds *that same deployment's commit*,
+> not the newest code. If you retry an old deployment you will quietly roll the
+> site back. Check the top of the build log — it prints `HEAD is now at ...` —
+> and retry the **most recent** deployment, or just push any change to `main`,
+> which always deploys the latest.
+
 *(Optional: add `PICKUP_SHIPPING_TITLE` if the shipping method is ever renamed.
 It defaults to `In Store Pickup`, which is what your Shipx rate is called today.)*
 
