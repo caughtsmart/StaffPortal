@@ -13,6 +13,11 @@ import Base from '../layouts/Base.astro';
     <span class="pickup-updated" id="pickup-updated"></span>
   </div>
 
+  <div id="pickup-notice" class="pickup-note" hidden>
+    <span id="pickup-notice-text"></span>
+    <button type="button" class="notice-close" id="pickup-notice-close" aria-label="Dismiss">×</button>
+  </div>
+
   <div id="pickup-state" class="pickup-note">Loading orders…</div>
 
   <section class="pickup-group" id="group-standard" hidden>
@@ -60,6 +65,9 @@ import Base from '../layouts/Base.astro';
     const REFRESH_MS = 60000;
 
     const stateEl = document.getElementById('pickup-state');
+    const noticeEl = document.getElementById('pickup-notice');
+    const noticeTextEl = document.getElementById('pickup-notice-text');
+    const noticeCloseEl = document.getElementById('pickup-notice-close');
     const updatedEl = document.getElementById('pickup-updated');
     const refreshBtn = document.getElementById('pickup-refresh');
 
@@ -90,6 +98,15 @@ import Base from '../layouts/Base.astro';
       stateEl.hidden = false;
       stateEl.className = 'pickup-note' + (kind ? ' pickup-note-' + kind : '');
       stateEl.textContent = message;
+    }
+
+    // Result of pressing a button. Stays put until dismissed — the list reloads
+    // straight after an action, and anything written to the status line would be
+    // wiped before anyone could read it.
+    function setNotice(message, kind) {
+      noticeEl.hidden = !message;
+      noticeEl.className = 'pickup-note pickup-notice' + (kind ? ' pickup-note-' + kind : '');
+      noticeTextEl.textContent = message || '';
     }
 
     function stageLabel(order) {
@@ -235,17 +252,25 @@ import Base from '../layouts/Base.astro';
         const data = await response.json();
         if (!data.ok) throw new Error(data.error || 'That did not work.');
 
-        if (action === 'ready' && data.emailWarning) {
-          setState(`${order.number}: ${data.emailWarning}`, 'warn');
-        } else if (action === 'ready' && data.emailed === false) {
-          setState(
-            `${order.number} is marked ready, but the email did not send: ${data.emailError}. ` +
-              `Give the customer a ring.`,
-            'warn'
-          );
+        if (action === 'ready') {
+          if (data.emailWarning) {
+            setNotice(`${order.number}: ${data.emailWarning}`, 'warn');
+          } else if (data.emailed === false) {
+            setNotice(
+              `${order.number} is marked ready, but the email did NOT send: ${data.emailError} ` +
+                `Give the customer a ring.`,
+              'bad'
+            );
+          } else {
+            setNotice(`${order.number} marked ready — email sent to ${order.email}.`, 'good');
+          }
+        } else if (action === 'picked') {
+          setNotice(`${order.number} marked as picked.`, 'good');
+        } else if (action === 'collected') {
+          setNotice(`${order.number} collected and fulfilled in Shopify.`, 'good');
         }
       } catch (error) {
-        setState(`${order.number}: ${error.message}`, 'bad');
+        setNotice(`${order.number}: ${error.message}`, 'bad');
       } finally {
         busy.delete(order.id);
         await load(false);
@@ -262,6 +287,7 @@ import Base from '../layouts/Base.astro';
       });
     }
 
+    noticeCloseEl.addEventListener('click', () => setNotice(''));
     refreshBtn.addEventListener('click', () => load(true));
 
     load(true);

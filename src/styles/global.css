@@ -300,6 +300,16 @@ a { color: var(--ld-accent-dark); }
 .pickup-note-good { background: var(--ld-accent-tint); border-color: var(--ld-accent); color: var(--ld-ink); }
 .pickup-note-warn { background: var(--ld-accent-tint); border-color: var(--ld-accent); color: var(--ld-ink); }
 .pickup-note-bad { background: #fdecec; border-color: #e7b4b4; color: #8f1a24; }
+.pickup-notice { display: flex; align-items: flex-start; gap: 12px; }
+/* display:flex above would otherwise beat the browser's own [hidden] rule,
+   leaving the notice on screen after it's dismissed. */
+.pickup-notice[hidden] { display: none; }
+.pickup-notice > span { flex: 1; }
+.notice-close {
+  flex: none; background: none; border: 0; cursor: pointer;
+  font-size: 20px; line-height: 1; padding: 0 2px; color: inherit; opacity: .6;
+}
+.notice-close:hover { opacity: 1; }
 
 .table-scroll { overflow-x: auto; }
 .pickup-table {
