@@ -31,6 +31,59 @@ const API_VERSION = '2025-07';
 const PICKED_TAG = 'Picked';
 const READY_TAG = 'Ready for Collection';
 
+// Shopify records nothing about *when* a tag was put on an order, and storing
+// the time in an order metafield would need another permission — which has been
+// painful enough on this project already. So the time goes in a tag of its own,
+// alongside the stage tag: `picked-at-2026-08-08-1430Z`.
+//
+// The time is stored in UTC — that's what the trailing Z means — and the board
+// converts it to local time for display. So between late March and late October,
+// when Britain is an hour ahead, the tag you see in Shopify admin reads an hour
+// EARLIER than the board does. That is not a fault. It's stored this way because
+// a tag saying "14:30" with no zone would be genuinely ambiguous twice a year.
+const PICKED_STAMP = 'picked-at-';
+const READY_STAMP = 'ready-at-';
+
+// Shopify treats tags case-insensitively, so a tag can come back in a different
+// case from the one written. Every comparison here goes through this.
+function hasTag(tags, wanted) {
+  const target = wanted.toLowerCase();
+  return tags.some((tag) => typeof tag === 'string' && tag.toLowerCase() === target);
+}
+
+function stampTag(prefix, date) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return (
+    prefix +
+    `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}` +
+    `-${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}Z`
+  );
+}
+
+// Reads the time back out. Orders tagged before this existed simply have no
+// stamp, so this returns null and the board shows the stage without a time.
+// Exported so it can be tested directly; Cloudflare ignores every export here
+// except the onRequest handlers.
+export function readStamp(tags, prefix) {
+  const matches = tags
+    .filter((tag) => typeof tag === 'string' && tag.toLowerCase().startsWith(prefix))
+    .sort();
+  for (const tag of matches) {
+    // Shopify treats tags case-insensitively, so don't assume the case survived.
+    const rest = tag.slice(prefix.length);
+    const parts = /^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})Z$/i.exec(rest);
+    if (!parts) continue;
+    const when = new Date(Date.UTC(+parts[1], +parts[2] - 1, +parts[3], +parts[4], +parts[5]));
+    // Date.UTC rolls nonsense over rather than rejecting it — month 99 becomes a
+    // date years away — so the only real check is whether it writes back out the
+    // same way it came in.
+    if (!isNaN(when) && stampTag(prefix, when) === prefix + rest.toUpperCase()) {
+      return when.toISOString();
+    }
+  }
+  return null;
+}
+
 // Finding the pickups happens in two passes, because Shopify has no way to
 // filter orders by shipping method — `shipping_line:` in a search query is
 // silently ignored, so every unfulfilled order has to be looked at.
@@ -98,6 +151,16 @@ const detailQuery = (withProduct) => `
 /** Does this Shopify complaint mean we lack permission to read products? */
 const isProductAccessError = (message) =>
   /access denied for product/i.test(message) || /read_products/i.test(message);
+
+// Read an order's current tags before stamping it. Two tills can have the board
+// open, and one of them can be up to a minute stale — without this, the second
+// press writes a second timestamp tag that nothing ever removes, and re-sends
+// the customer a "ready for collection" email they already have.
+const ORDER_TAGS = `
+  query OrderTags($id: ID!) {
+    order(id: $id) { id tags }
+  }
+`;
 
 const TAGS_ADD = `
   mutation AddTag($id: ID!, $tags: [String!]!) {
@@ -299,8 +362,10 @@ function toCard(order) {
     })),
     isPreorder: lines.some((l) => l.preorder),
     releaseDate: releaseDates.length ? releaseDates[releaseDates.length - 1] : null,
-    picked: tags.includes(PICKED_TAG),
-    ready: tags.includes(READY_TAG),
+    picked: hasTag(tags, PICKED_TAG),
+    ready: hasTag(tags, READY_TAG),
+    pickedAt: readStamp(tags, PICKED_STAMP),
+    readyAt: readStamp(tags, READY_STAMP),
     fulfillmentOrderIds: (order.fulfillmentOrders?.nodes ?? [])
       .filter((fo) => fo.status === 'OPEN' || fo.status === 'IN_PROGRESS')
       .map((fo) => fo.id),
@@ -378,21 +443,35 @@ export async function onRequestPost({ request, env }) {
   }
 
   try {
-    if (action === 'picked') {
-      const data = await shopify(env, TAGS_ADD, { id: orderId, tags: [PICKED_TAG] });
-      throwOnUserErrors(data.tagsAdd, 'Marking as picked');
-      return json({ ok: true });
-    }
+    const now = new Date();
 
-    if (action === 'ready') {
-      const data = await shopify(env, TAGS_ADD, { id: orderId, tags: [READY_TAG] });
-      throwOnUserErrors(data.tagsAdd, 'Marking as ready');
+    if (action === 'picked' || action === 'ready') {
+      const stageTag = action === 'picked' ? PICKED_TAG : READY_TAG;
+      const stampPrefix = action === 'picked' ? PICKED_STAMP : READY_STAMP;
+
+      // Somebody else may have got there first — their board could be up to a
+      // minute stale, so both tills can show the button as still pressable.
+      const existing = (await shopify(env, ORDER_TAGS, { id: orderId })).order?.tags ?? [];
+      if (hasTag(existing, stageTag)) {
+        return json({
+          ok: true,
+          already: true,
+          at: readStamp(existing, stampPrefix),
+        });
+      }
+
+      const tags = [stageTag, stampTag(stampPrefix, now)];
+      const data = await shopify(env, TAGS_ADD, { id: orderId, tags });
+      throwOnUserErrors(data.tagsAdd, action === 'picked' ? 'Marking as picked' : 'Marking as ready');
+
+      if (action === 'picked') return json({ ok: true, at: now.toISOString() });
 
       // Tell the customer. If the email step fails we still report success for
       // the tag, but say so plainly, so staff know to ring them instead.
       const emailed = await sendReadyEmail(env, body);
       return json({
         ok: true,
+        at: now.toISOString(),
         emailed: emailed.sent,
         emailError: emailed.error,
         emailWarning: emailed.warning ?? null,
