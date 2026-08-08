@@ -35,7 +35,22 @@ function describeReadyEmail(url) {
   return 'Set, and it looks like a deployed Apps Script web app.';
 }
 
-export async function onRequestGet({ env }) {
+// Which code the running site was built from. This is read out of the
+// deployment's own files (version.json, written at build time), so it always
+// describes the code answering this request — unlike the footer, which a
+// browser may be showing you from its cache.
+async function readVersion(env, request) {
+  try {
+    if (!env.ASSETS) return { commit: null, branch: null, builtAt: null, note: 'Not available here.' };
+    const response = await env.ASSETS.fetch(new URL('/version.json', request.url));
+    if (!response.ok) return { commit: null, branch: null, builtAt: null, note: 'version.json missing.' };
+    return await response.json();
+  } catch (error) {
+    return { commit: null, branch: null, builtAt: null, note: String(error.message || error) };
+  }
+}
+
+export async function onRequestGet({ env, request }) {
   const settings = {
     SHOPIFY_STORE: {
       set: Boolean(env.SHOPIFY_STORE),
@@ -71,11 +86,13 @@ export async function onRequestGet({ env }) {
     .map(([name]) => name);
 
   const readyEmail = Boolean(env.READY_EMAIL_URL) && Boolean(env.READY_EMAIL_SECRET);
+  const version = await readVersion(env, request);
 
   return new Response(
     JSON.stringify(
       {
         ok: missing.length === 0,
+        deployed: version,
         shopifyReady: missing.length === 0,
         readyEmailConfigured: readyEmail,
         summary: [

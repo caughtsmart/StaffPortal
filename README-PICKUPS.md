@@ -88,10 +88,18 @@ Two things are easy to get wrong here, and both look identical from the outside:
 code that hasn't deployed, and a setting that was added *after* the last build.
 So there are two ways to check without reading the Cloudflare dashboard.
 
-**Which code is live.** Every page now prints a short code in the bottom-right
-of the footer, e.g. `build 5c1192a · main`. That is the exact commit the running
-site was built from. Compare it with the newest commit on GitHub — if they don't
-match, your change hasn't deployed yet, whatever the Deployments list says.
+**Which code is live.** Two places show it. The footer of every page prints a
+short code, e.g. `build 5c1192a · main` — handy, but a footer can be shown to you
+out of your browser's cache. The one that cannot lie is the `deployed` line at
+the top of **ldhq.uk/api/health**, which is read fresh every time. Compare it
+with the newest commit on GitHub; if they don't match, your change hasn't
+deployed, whatever the Deployments list says.
+
+> This is the trap that cost the most time on this project: a page kept in a
+> browser's cache looks exactly like a deployment that never happened.
+> `public/_headers` now tells browsers to check with the server before reusing a
+> page, so it shouldn't recur — but if a page ever looks stale again, load it
+> with `?x=1` on the end. That bypasses the cache and settles it in seconds.
 
 **Which settings are live.** Visit **ldhq.uk/api/health**. It lists every
 setting and whether the running site can see it — never the secret values

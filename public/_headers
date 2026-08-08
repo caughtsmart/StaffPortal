@@ -1,0 +1,14 @@
+# Cloudflare Pages reads this file and applies these headers to what it serves.
+#
+# Why it exists: pages were being served from browsers' caches after a new
+# version had gone live, so changes looked like they hadn't deployed when they
+# had. "no-cache" does not mean "never store" — it means the browser must ask
+# the server whether its copy is still current before reusing it. So repeat
+# visits stay quick (the server answers "still fine, use yours"), but you can
+# never be shown yesterday's page.
+/*
+  Cache-Control: no-cache
+
+# The board and the settings check must never come from a cache at all.
+/api/*
+  Cache-Control: no-store
