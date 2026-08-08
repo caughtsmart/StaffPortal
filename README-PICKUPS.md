@@ -104,8 +104,9 @@ the Apps Script:
 
    If it isn't, the email still goes out — from the account's own address — and
    the board shows a warning saying so, rather than quietly using the wrong
-   sender. Replies go to `info@loadeddice.uk` either way, so a customer replying
-   about their order still reaches someone.
+   sender. Replies go to `customerservice@gmail.com` either way (the `REPLY_TO`
+   constant in the script), so a customer replying about their order still
+   reaches someone.
 4. Copy the web app address, and add two more variables in Cloudflare:
 
 | Name | Value | Type |

@@ -54,7 +54,7 @@ var SEND_FROM = 'noreply@loadeddice.uk';
 
 // Where replies go. Deliberately NOT the noreply address: a customer replying
 // about their order should reach someone.
-var REPLY_TO = 'info@loadeddice.uk';
+var REPLY_TO = 'customerservice@gmail.com';
 
 // -------------------------------------------------------------------------
 
